@@ -26,6 +26,10 @@ namespace ConferenceApp
             ConfigureAccessByRole();
 
             btnProfile.Click += btnProfile_Click;
+            btnReports.Click += btnReports_Click;
+            btnSections.Click += btnSections_Click;
+            btnProgram.Click += btnProgram_Click;
+            btnMaterials.Click += btnMaterials_Click;
         }
 
         private void ConfigureAccessByRole()
@@ -79,6 +83,30 @@ namespace ConferenceApp
         {
             ProfileForm profileForm = new ProfileForm(currentUserId);
             profileForm.ShowDialog();
+        }
+
+        private void btnReports_Click(object sender, EventArgs e)
+        {
+            ReportsForm reportsForm = new ReportsForm(currentUserId);
+            reportsForm.ShowDialog();
+        }
+
+        private void btnSections_Click(object sender, EventArgs e)
+        {
+            SectionsForm sectionsForm = new SectionsForm(currentUserId, currentUserRole);
+            sectionsForm.ShowDialog();
+        }
+
+        private void btnProgram_Click(object sender, EventArgs e)
+        {
+            ProgramForm programForm = new ProgramForm(currentUserRole);
+            programForm.ShowDialog();
+        }
+
+        private void btnMaterials_Click(object sender, EventArgs e)
+        {
+            MaterialsForm materialsForm = new MaterialsForm();
+            materialsForm.ShowDialog();
         }
 
         private void btnExit_Click(object sender, EventArgs e)
