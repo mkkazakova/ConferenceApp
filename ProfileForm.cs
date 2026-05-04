@@ -10,19 +10,26 @@ namespace ConferenceApp
     public partial class ProfileForm : Form
     {
         private int currentUserId;
+        private string currentUserRole;
 
-        public ProfileForm(int userId)
+        public ProfileForm(int userId, string role)
         {
             InitializeComponent();
 
             currentUserId = userId;
+            currentUserRole = role;
 
             InitComboBoxes();
             LoadUserData();
+            ConfigureAccessByRole();
         }
 
         private void InitComboBoxes()
         {
+            cmbStatus.Items.Clear();
+            cmbRole.Items.Clear();
+            cmbAcademicDegree.Items.Clear();
+
             cmbStatus.Items.AddRange(new object[]
             {
                 "Докладчик",
@@ -54,6 +61,15 @@ namespace ConferenceApp
             cmbAcademicDegree.DropDownStyle = ComboBoxStyle.DropDownList;
 
             cmbRole.Enabled = false;
+        }
+
+        private void ConfigureAccessByRole()
+        {
+            if (currentUserRole == "Рецензент")
+            {
+                lblStatus.Visible = false;
+                cmbStatus.Visible = false;
+            }
         }
 
         private void LoadUserData()
@@ -109,9 +125,15 @@ namespace ConferenceApp
 
         private void btnSaveProfile_Click(object sender, EventArgs e)
         {
-            if (cmbStatus.SelectedItem == null || cmbAcademicDegree.SelectedItem == null)
+            if (currentUserRole != "Рецензент" && cmbStatus.SelectedItem == null)
             {
-                MessageBox.Show("Выберите статус и ученую степень.");
+                MessageBox.Show("Выберите статус.");
+                return;
+            }
+
+            if (cmbAcademicDegree.SelectedItem == null)
+            {
+                MessageBox.Show("Выберите ученую степень.");
                 return;
             }
 
@@ -126,19 +148,39 @@ namespace ConferenceApp
                 academicDegreeValue = cmbAcademicDegree.SelectedItem.ToString();
             }
 
-            string query = @"
-                UPDATE dbo.tb_participants
-                SET participant_status = @Status,
-                    academic_degree = @AcademicDegree
-                WHERE id_participant = @UserId;
-            ";
+            string query;
+            SqlParameter[] parameters;
 
-            SqlParameter[] parameters =
+            if (currentUserRole == "Рецензент")
             {
-                new SqlParameter("@Status", cmbStatus.SelectedItem.ToString()),
-                new SqlParameter("@AcademicDegree", academicDegreeValue),
-                new SqlParameter("@UserId", currentUserId)
-            };
+                query = @"
+                    UPDATE dbo.tb_participants
+                    SET academic_degree = @AcademicDegree
+                    WHERE id_participant = @UserId;
+                ";
+
+                parameters = new SqlParameter[]
+                {
+                    new SqlParameter("@AcademicDegree", academicDegreeValue),
+                    new SqlParameter("@UserId", currentUserId)
+                };
+            }
+            else
+            {
+                query = @"
+                    UPDATE dbo.tb_participants
+                    SET participant_status = @Status,
+                        academic_degree = @AcademicDegree
+                    WHERE id_participant = @UserId;
+                ";
+
+                parameters = new SqlParameter[]
+                {
+                    new SqlParameter("@Status", cmbStatus.SelectedItem.ToString()),
+                    new SqlParameter("@AcademicDegree", academicDegreeValue),
+                    new SqlParameter("@UserId", currentUserId)
+                };
+            }
 
             int rows = Database.ExecuteNonQuery(query, parameters);
 
@@ -146,6 +188,7 @@ namespace ConferenceApp
             {
                 MessageBox.Show("Данные успешно сохранены.");
                 LoadUserData();
+                ConfigureAccessByRole();
             }
         }
 

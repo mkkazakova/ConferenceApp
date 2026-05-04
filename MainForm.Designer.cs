@@ -114,7 +114,7 @@
             this.menuPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.menuPanel.Location = new System.Drawing.Point(221, 228);
             this.menuPanel.Name = "menuPanel";
-            this.menuPanel.Size = new System.Drawing.Size(400, 360);
+            this.menuPanel.Size = new System.Drawing.Size(400, 560);
             this.menuPanel.TabIndex = 4;
             this.menuPanel.WrapContents = false;
 
@@ -236,7 +236,7 @@
             this.btnExit.BackColor = System.Drawing.Color.FromArgb(230, 230, 230);
             this.btnExit.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnExit.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F);
-            this.btnExit.Location = new System.Drawing.Point(651, 620);
+            this.btnExit.Location = new System.Drawing.Point(651, 800);
             this.btnExit.Name = "btnExit";
             this.btnExit.Size = new System.Drawing.Size(120, 39);
             this.btnExit.TabIndex = 5;
@@ -251,7 +251,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(240, 247, 255);
-            this.ClientSize = new System.Drawing.Size(842, 680);
+            this.ClientSize = new System.Drawing.Size(842, 850);
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this.lblUser);
             this.Controls.Add(this.lblRole);

@@ -44,6 +44,8 @@ namespace ConferenceApp
             btnMaterials.Visible = false;
             btnStatistics.Visible = false;
 
+            btnReports.Text = "Доклады";
+
             if (currentUserRole == "Участник")
             {
                 btnReports.Visible = true;
@@ -54,8 +56,14 @@ namespace ConferenceApp
             else if (currentUserRole == "Рецензент")
             {
                 btnReports.Visible = true;
-                btnReviews.Visible = true;
-                btnProgram.Visible = true;
+                btnReports.Text = "Доклады для рецензирования";
+
+                btnReviews.Visible = false;
+                btnSections.Visible = false;
+                btnProgram.Visible = false;
+                btnMaterials.Visible = false;
+                btnParticipants.Visible = false;
+                btnStatistics.Visible = false;
             }
             else if (currentUserRole == "Организатор")
             {
@@ -81,14 +89,22 @@ namespace ConferenceApp
 
         private void btnProfile_Click(object sender, EventArgs e)
         {
-            ProfileForm profileForm = new ProfileForm(currentUserId);
+            ProfileForm profileForm = new ProfileForm(currentUserId, currentUserRole);
             profileForm.ShowDialog();
         }
 
         private void btnReports_Click(object sender, EventArgs e)
         {
-            ReportsForm reportsForm = new ReportsForm(currentUserId);
-            reportsForm.ShowDialog();
+            if (currentUserRole == "Рецензент")
+            {
+                ReviewsForm reviewsForm = new ReviewsForm(currentUserId);
+                reviewsForm.ShowDialog();
+            }
+            else
+            {
+                ReportsForm reportsForm = new ReportsForm(currentUserId);
+                reportsForm.ShowDialog();
+            }
         }
 
         private void btnSections_Click(object sender, EventArgs e)
