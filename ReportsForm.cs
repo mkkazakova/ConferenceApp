@@ -9,13 +9,18 @@ namespace ConferenceApp
 {
     public partial class ReportsForm : Form
     {
-        private const string ReportsFolderName = "Reports";
-
         private int currentUserId;
         private string currentUserRole;
         private int selectedReportId = 0;
         private int reportIdToSelect = 0;
         private string selectedSourceFilePath = "";
+
+        private class ReportFileData
+        {
+            public string FileName { get; set; }
+            public string FileExtension { get; set; }
+            public byte[] FileContent { get; set; }
+        }
 
         public ReportsForm(int userId, string role)
         {
@@ -59,34 +64,46 @@ namespace ConferenceApp
             }
         }
 
+        private bool IsOrganizer()
+        {
+            return currentUserRole == "Организатор";
+        }
+
+        private bool IsAdmin()
+        {
+            return currentUserRole == "Администратор";
+        }
+
         private bool IsOrganizerOrAdmin()
         {
-            return currentUserRole == "Организатор" || currentUserRole == "Администратор";
+            return IsOrganizer() || IsAdmin();
         }
 
         private void ConfigureAccessByRole()
         {
-            bool isOrganizer = IsOrganizerOrAdmin();
+            bool isOrganizer = IsOrganizer();
+            bool isAdmin = IsAdmin();
+            bool isParticipant = !isOrganizer && !isAdmin;
 
-            lblTitle.Text = isOrganizer ? "Доклады участников" : "Мои доклады";
+            lblTitle.Text = IsOrganizerOrAdmin() ? "Доклады участников" : "Мои доклады";
 
-            btnAdd.Visible = !isOrganizer;
-            btnUpdate.Visible = !isOrganizer;
-            btnDelete.Visible = !isOrganizer;
-            btnChooseFile.Visible = !isOrganizer;
-            btnClear.Visible = !isOrganizer;
+            btnAdd.Visible = isParticipant;
+            btnUpdate.Visible = isParticipant || isAdmin;
+            btnDelete.Visible = isParticipant;
+            btnChooseFile.Visible = isParticipant || isAdmin;
+            btnClear.Visible = isParticipant || isAdmin;
 
-            lblSection.Visible = isOrganizer;
-            cmbSection.Visible = isOrganizer;
-            lblDate.Visible = isOrganizer;
-            dtpDate.Visible = isOrganizer;
-            lblTime.Visible = isOrganizer;
-            dtpTime.Visible = isOrganizer;
-            lblLocation.Visible = isOrganizer;
-            txtLocation.Visible = isOrganizer;
-            btnAddToSection.Visible = isOrganizer;
+            lblSection.Visible = IsOrganizerOrAdmin();
+            cmbSection.Visible = IsOrganizerOrAdmin();
+            lblDate.Visible = IsOrganizerOrAdmin();
+            dtpDate.Visible = IsOrganizerOrAdmin();
+            lblTime.Visible = IsOrganizerOrAdmin();
+            dtpTime.Visible = IsOrganizerOrAdmin();
+            lblLocation.Visible = IsOrganizerOrAdmin();
+            txtLocation.Visible = IsOrganizerOrAdmin();
+            btnAddToSection.Visible = IsOrganizerOrAdmin();
 
-            if (isOrganizer)
+            if (IsOrganizerOrAdmin())
             {
                 btnAddToSection.Text = "Сохранить в программе";
             }
@@ -114,7 +131,7 @@ namespace ConferenceApp
                             r.annotation AS [Аннотация],
                             r.keywords AS [Ключевые слова],
                             r.review_status AS [Статус],
-                            r.file_path AS [Файл],
+                            r.file_name AS [Файл],
                             cp.id_section AS [ID секции],
                             ISNULL(s.section_name, N'Не добавлен') AS [Секция],
                             cp.presentation_date AS [Дата],
@@ -141,7 +158,7 @@ namespace ConferenceApp
                             annotation AS [Аннотация],
                             keywords AS [Ключевые слова],
                             review_status AS [Статус рецензирования],
-                            file_path AS [Файл]
+                            file_name AS [Файл]
                         FROM dbo.tb_reports
                         WHERE id_author = @UserId
                         ORDER BY id_report DESC;
@@ -257,7 +274,7 @@ namespace ConferenceApp
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            if (IsOrganizerOrAdmin())
+            if (!CanParticipantEdit())
                 return;
 
             if (!ValidateFields())
@@ -265,7 +282,7 @@ namespace ConferenceApp
 
             try
             {
-                string relativeFilePath = SaveSelectedFileIfNeeded();
+                ReportFileData fileData = GetSelectedFileData();
 
                 string query = @"
                     EXEC dbo.usp_add_report
@@ -273,7 +290,9 @@ namespace ConferenceApp
                         @id_author = @AuthorId,
                         @annotation = @Annotation,
                         @keywords = @Keywords,
-                        @file_path = @FilePath;
+                        @file_name = @FileName,
+                        @file_extension = @FileExtension,
+                        @file_content = @FileContent;
                 ";
 
                 SqlParameter[] parameters =
@@ -282,7 +301,9 @@ namespace ConferenceApp
                     new SqlParameter("@AuthorId", currentUserId),
                     new SqlParameter("@Annotation", GetNullableText(txtAnnotation.Text)),
                     new SqlParameter("@Keywords", GetNullableText(txtKeywords.Text)),
-                    new SqlParameter("@FilePath", GetNullableText(relativeFilePath))
+                    CreateNullableStringParameter("@FileName", fileData == null ? null : fileData.FileName, 255),
+                    CreateNullableStringParameter("@FileExtension", fileData == null ? null : fileData.FileExtension, 20),
+                    CreateFileContentParameter("@FileContent", fileData)
                 };
 
                 Database.ExecuteNonQuery(query, parameters);
@@ -298,7 +319,7 @@ namespace ConferenceApp
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
-            if (IsOrganizerOrAdmin())
+            if (IsOrganizer())
                 return;
 
             if (selectedReportId == 0)
@@ -312,26 +333,50 @@ namespace ConferenceApp
 
             try
             {
-                string relativeFilePath = SaveSelectedFileIfNeeded();
+                ReportFileData fileData = GetSelectedFileData();
 
-                string query = @"
-                    UPDATE dbo.tb_reports
-                    SET
-                        topic = @Topic,
-                        annotation = @Annotation,
-                        keywords = @Keywords,
-                        file_path = @FilePath
-                    WHERE id_report = @ReportId
-                      AND id_author = @UserId
-                      AND review_status = N'На рассмотрении';
-                ";
+                string query;
+
+                if (IsAdmin())
+                {
+                    query = @"
+                        UPDATE dbo.tb_reports
+                        SET
+                            topic = @Topic,
+                            annotation = @Annotation,
+                            keywords = @Keywords,
+                            file_name = CASE WHEN @HasNewFile = 1 THEN @FileName ELSE file_name END,
+                            file_extension = CASE WHEN @HasNewFile = 1 THEN @FileExtension ELSE file_extension END,
+                            file_content = CASE WHEN @HasNewFile = 1 THEN @FileContent ELSE file_content END
+                        WHERE id_report = @ReportId;
+                    ";
+                }
+                else
+                {
+                    query = @"
+                        UPDATE dbo.tb_reports
+                        SET
+                            topic = @Topic,
+                            annotation = @Annotation,
+                            keywords = @Keywords,
+                            file_name = CASE WHEN @HasNewFile = 1 THEN @FileName ELSE file_name END,
+                            file_extension = CASE WHEN @HasNewFile = 1 THEN @FileExtension ELSE file_extension END,
+                            file_content = CASE WHEN @HasNewFile = 1 THEN @FileContent ELSE file_content END
+                        WHERE id_report = @ReportId
+                          AND id_author = @UserId
+                          AND review_status = N'На рассмотрении';
+                    ";
+                }
 
                 SqlParameter[] parameters =
                 {
                     new SqlParameter("@Topic", txtTopic.Text.Trim()),
                     new SqlParameter("@Annotation", GetNullableText(txtAnnotation.Text)),
                     new SqlParameter("@Keywords", GetNullableText(txtKeywords.Text)),
-                    new SqlParameter("@FilePath", GetNullableText(relativeFilePath)),
+                    new SqlParameter("@HasNewFile", SqlDbType.Bit) { Value = fileData != null },
+                    CreateNullableStringParameter("@FileName", fileData == null ? null : fileData.FileName, 255),
+                    CreateNullableStringParameter("@FileExtension", fileData == null ? null : fileData.FileExtension, 20),
+                    CreateFileContentParameter("@FileContent", fileData),
                     new SqlParameter("@ReportId", selectedReportId),
                     new SqlParameter("@UserId", currentUserId)
                 };
@@ -354,9 +399,14 @@ namespace ConferenceApp
             }
         }
 
+        private bool CanParticipantEdit()
+        {
+            return !IsOrganizerOrAdmin();
+        }
+
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            if (IsOrganizerOrAdmin())
+            if (!CanParticipantEdit())
                 return;
 
             if (selectedReportId == 0)
@@ -622,63 +672,71 @@ namespace ConferenceApp
 
         private void btnChooseFile_Click(object sender, EventArgs e)
         {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*";
+            if (IsOrganizer())
+                return;
 
-            if (dialog.ShowDialog() == DialogResult.OK)
+            using (OpenFileDialog dialog = new OpenFileDialog())
             {
-                selectedSourceFilePath = dialog.FileName;
-                txtFilePath.Text = ReportsFolderName + "\\" + Path.GetFileName(dialog.FileName);
+                dialog.Title = "Выберите PDF-файл доклада";
+                dialog.Filter = "PDF files (*.pdf)|*.pdf";
+                dialog.Multiselect = false;
+                dialog.CheckFileExists = true;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    selectedSourceFilePath = dialog.FileName;
+                    txtFilePath.Text = Path.GetFileName(dialog.FileName);
+                }
             }
         }
 
-        private string SaveSelectedFileIfNeeded()
+        private ReportFileData GetSelectedFileData()
         {
             if (string.IsNullOrWhiteSpace(selectedSourceFilePath))
-            {
-                if (string.IsNullOrWhiteSpace(txtFilePath.Text))
-                    return null;
-
-                return txtFilePath.Text.Trim();
-            }
+                return null;
 
             if (!File.Exists(selectedSourceFilePath))
             {
                 throw new FileNotFoundException("Выбранный файл не найден.");
             }
 
-            string reportsDirectory = Path.Combine(Application.StartupPath, ReportsFolderName);
-            Directory.CreateDirectory(reportsDirectory);
+            string extension = Path.GetExtension(selectedSourceFilePath);
 
-            string fileName = Path.GetFileName(selectedSourceFilePath);
-            string destinationPath = Path.Combine(reportsDirectory, fileName);
-
-            if (!IsSamePath(selectedSourceFilePath, destinationPath))
+            if (!string.Equals(extension, ".pdf", StringComparison.OrdinalIgnoreCase))
             {
-                if (File.Exists(destinationPath))
-                {
-                    string name = Path.GetFileNameWithoutExtension(fileName);
-                    string extension = Path.GetExtension(fileName);
-                    string newFileName = name + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + extension;
-
-                    destinationPath = Path.Combine(reportsDirectory, newFileName);
-                }
-
-                File.Copy(selectedSourceFilePath, destinationPath);
+                throw new InvalidOperationException("Можно выбрать только PDF-файл.");
             }
 
-            selectedSourceFilePath = "";
-
-            return ReportsFolderName + "\\" + Path.GetFileName(destinationPath);
+            return new ReportFileData
+            {
+                FileName = Path.GetFileName(selectedSourceFilePath),
+                FileExtension = extension,
+                FileContent = File.ReadAllBytes(selectedSourceFilePath)
+            };
         }
 
-        private bool IsSamePath(string firstPath, string secondPath)
+        private SqlParameter CreateNullableStringParameter(string name, string value, int size)
         {
-            return string.Equals(
-                Path.GetFullPath(firstPath).TrimEnd('\\'),
-                Path.GetFullPath(secondPath).TrimEnd('\\'),
-                StringComparison.OrdinalIgnoreCase
-            );
+            SqlParameter parameter = new SqlParameter(name, SqlDbType.NVarChar, size);
+
+            if (string.IsNullOrWhiteSpace(value))
+                parameter.Value = DBNull.Value;
+            else
+                parameter.Value = value.Trim();
+
+            return parameter;
+        }
+
+        private SqlParameter CreateFileContentParameter(string name, ReportFileData fileData)
+        {
+            SqlParameter parameter = new SqlParameter(name, SqlDbType.VarBinary, -1);
+
+            if (fileData == null || fileData.FileContent == null || fileData.FileContent.Length == 0)
+                parameter.Value = DBNull.Value;
+            else
+                parameter.Value = fileData.FileContent;
+
+            return parameter;
         }
 
         private void btnClear_Click(object sender, EventArgs e)

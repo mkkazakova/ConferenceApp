@@ -54,7 +54,7 @@ namespace ConferenceApp
                 txtTopic.ReadOnly = false;
                 txtAnnotation.ReadOnly = false;
                 txtKeywords.ReadOnly = false;
-                txtFilePath.ReadOnly = false;
+                txtFilePath.ReadOnly = true;
                 txtComments.ReadOnly = false;
 
                 txtAuthor.Visible = false;
@@ -210,7 +210,7 @@ namespace ConferenceApp
                             ISNULL(rv.review_result, N'Не рецензирован') AS [Результат],
                             r.annotation AS [Аннотация],
                             r.keywords AS [Ключевые слова],
-                            r.file_path AS [Файл],
+                            r.file_name AS [Файл],
                             rv.comments AS [Комментарий]
                         FROM dbo.tb_reports AS r
                         INNER JOIN dbo.tb_participants AS a
@@ -244,7 +244,7 @@ namespace ConferenceApp
                             ISNULL(rv.review_result, N'Не рецензирован') AS [Результат],
                             r.annotation AS [Аннотация],
                             r.keywords AS [Ключевые слова],
-                            r.file_path AS [Файл],
+                            r.file_name AS [Файл],
                             rv.comments AS [Комментарий]
                         FROM dbo.tb_reports AS r
                         INNER JOIN dbo.tb_participants AS a
@@ -534,7 +534,6 @@ namespace ConferenceApp
                             annotation = @Annotation,
                             keywords = @Keywords,
                             review_status = @ReportStatus,
-                            file_path = @FilePath,
                             id_author = @AuthorId
                         WHERE id_report = @ReportId;
 
@@ -574,9 +573,11 @@ namespace ConferenceApp
                             );
                         END
 
-                        UPDATE dbo.tb_reports
-                        SET review_status = @ReportStatus
-                        WHERE id_report = @ReportId;
+                        IF @ReportStatus <> N'Принят'
+                        BEGIN
+                            DELETE FROM dbo.tb_conference_program
+                            WHERE id_report = @ReportId;
+                        END
 
                         COMMIT TRANSACTION;
                     END TRY
@@ -598,7 +599,6 @@ namespace ConferenceApp
                     new SqlParameter("@Annotation", GetNullableText(txtAnnotation.Text)),
                     new SqlParameter("@Keywords", GetNullableText(txtKeywords.Text)),
                     new SqlParameter("@ReportStatus", cmbReportStatus.SelectedItem.ToString()),
-                    new SqlParameter("@FilePath", GetNullableText(txtFilePath.Text)),
                     new SqlParameter("@NoveltyScore", Convert.ToInt32(numNovelty.Value)),
                     new SqlParameter("@RelevanceScore", Convert.ToInt32(numRelevance.Value)),
                     new SqlParameter("@QualityScore", Convert.ToInt32(numQuality.Value)),

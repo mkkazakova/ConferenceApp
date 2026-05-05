@@ -242,7 +242,7 @@ namespace ConferenceApp
                     r.annotation AS [Аннотация],
                     r.keywords AS [Ключевые слова],
                     r.review_status AS [Статус рецензирования],
-                    r.file_path AS [Файл]
+                    r.file_name AS [Файл]
                 FROM dbo.tb_reports AS r
                 WHERE r.id_author = @ParticipantId
                 ORDER BY r.id_report DESC;
