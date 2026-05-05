@@ -2,52 +2,158 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 
 namespace ConferenceApp
 {
     public partial class ReportsForm : Form
     {
-        private int currentUserId;
-        private int selectedReportId = 0;
+        private const string ReportsFolderName = "Reports";
 
-        public ReportsForm(int userId)
+        private int currentUserId;
+        private string currentUserRole;
+        private int selectedReportId = 0;
+        private int reportIdToSelect = 0;
+        private string selectedSourceFilePath = "";
+
+        public ReportsForm(int userId, string role)
         {
             InitializeComponent();
 
             currentUserId = userId;
+            currentUserRole = role;
 
+            InitializeForm();
+        }
+
+        public ReportsForm(int userId, string role, int reportId)
+        {
+            InitializeComponent();
+
+            currentUserId = userId;
+            currentUserRole = role;
+            reportIdToSelect = reportId;
+
+            InitializeForm();
+        }
+
+        private void InitializeForm()
+        {
             SetupGridStyle();
+            ConfigureAccessByRole();
             CenterTitle();
 
             dgvReports.MouseDown += dgvReports_MouseDown;
 
+            if (IsOrganizerOrAdmin())
+            {
+                LoadSections();
+            }
+
             LoadReports();
+
+            if (reportIdToSelect > 0)
+            {
+                SelectReportInGrid(reportIdToSelect);
+            }
+        }
+
+        private bool IsOrganizerOrAdmin()
+        {
+            return currentUserRole == "Организатор" || currentUserRole == "Администратор";
+        }
+
+        private void ConfigureAccessByRole()
+        {
+            bool isOrganizer = IsOrganizerOrAdmin();
+
+            lblTitle.Text = isOrganizer ? "Доклады участников" : "Мои доклады";
+
+            btnAdd.Visible = !isOrganizer;
+            btnUpdate.Visible = !isOrganizer;
+            btnDelete.Visible = !isOrganizer;
+            btnChooseFile.Visible = !isOrganizer;
+            btnClear.Visible = !isOrganizer;
+
+            lblSection.Visible = isOrganizer;
+            cmbSection.Visible = isOrganizer;
+            lblDate.Visible = isOrganizer;
+            dtpDate.Visible = isOrganizer;
+            lblTime.Visible = isOrganizer;
+            dtpTime.Visible = isOrganizer;
+            lblLocation.Visible = isOrganizer;
+            txtLocation.Visible = isOrganizer;
+            btnAddToSection.Visible = isOrganizer;
+
+            if (isOrganizer)
+            {
+                btnAddToSection.Text = "Сохранить в программе";
+            }
+
+            txtTopic.ReadOnly = isOrganizer;
+            txtAnnotation.ReadOnly = isOrganizer;
+            txtKeywords.ReadOnly = isOrganizer;
+            txtFilePath.ReadOnly = true;
+            txtReviewStatus.ReadOnly = true;
         }
 
         private void LoadReports()
         {
             try
             {
-                string query = @"
-                    SELECT
-                        id_report AS [ID],
-                        topic AS [Тема],
-                        annotation AS [Аннотация],
-                        keywords AS [Ключевые слова],
-                        review_status AS [Статус рецензирования],
-                        file_path AS [Файл]
-                    FROM dbo.tb_reports
-                    WHERE id_author = @UserId
-                    ORDER BY id_report DESC;
-                ";
+                DataTable table;
 
-                SqlParameter[] parameters =
+                if (IsOrganizerOrAdmin())
                 {
-                    new SqlParameter("@UserId", currentUserId)
-                };
+                    string query = @"
+                        SELECT
+                            r.id_report AS [ID],
+                            r.topic AS [Тема],
+                            p.last_name + N' ' + p.first_name + N' ' + ISNULL(p.middle_name, N'') AS [Автор],
+                            r.annotation AS [Аннотация],
+                            r.keywords AS [Ключевые слова],
+                            r.review_status AS [Статус],
+                            r.file_path AS [Файл],
+                            cp.id_section AS [ID секции],
+                            ISNULL(s.section_name, N'Не добавлен') AS [Секция],
+                            cp.presentation_date AS [Дата],
+                            CONVERT(VARCHAR(5), cp.presentation_time, 108) AS [Время],
+                            cp.location AS [Место]
+                        FROM dbo.tb_reports r
+                        JOIN dbo.tb_participants p
+                            ON r.id_author = p.id_participant
+                        LEFT JOIN dbo.tb_conference_program cp
+                            ON r.id_report = cp.id_report
+                        LEFT JOIN dbo.tb_sections s
+                            ON cp.id_section = s.id_section
+                        ORDER BY r.id_report DESC;
+                    ";
 
-                DataTable table = Database.ExecuteSelect(query, parameters);
+                    table = Database.ExecuteSelect(query);
+                }
+                else
+                {
+                    string query = @"
+                        SELECT
+                            id_report AS [ID],
+                            topic AS [Тема],
+                            annotation AS [Аннотация],
+                            keywords AS [Ключевые слова],
+                            review_status AS [Статус рецензирования],
+                            file_path AS [Файл]
+                        FROM dbo.tb_reports
+                        WHERE id_author = @UserId
+                        ORDER BY id_report DESC;
+                    ";
+
+                    SqlParameter[] parameters =
+                    {
+                        new SqlParameter("@UserId", currentUserId)
+                    };
+
+                    table = Database.ExecuteSelect(query, parameters);
+                }
 
                 dgvReports.DataSource = null;
                 dgvReports.AutoGenerateColumns = true;
@@ -56,6 +162,11 @@ namespace ConferenceApp
                 if (dgvReports.Columns.Count > 0)
                 {
                     dgvReports.Columns[0].Visible = false;
+                }
+
+                if (dgvReports.Columns.Contains("ID секции"))
+                {
+                    dgvReports.Columns["ID секции"].Visible = false;
                 }
 
                 foreach (DataGridViewColumn column in dgvReports.Columns)
@@ -68,6 +179,31 @@ namespace ConferenceApp
             catch (Exception ex)
             {
                 MessageBox.Show("Ошибка загрузки докладов: " + ex.Message);
+            }
+        }
+
+        private void LoadSections()
+        {
+            try
+            {
+                string query = @"
+                    SELECT
+                        id_section,
+                        section_name
+                    FROM dbo.tb_sections
+                    ORDER BY section_name;
+                ";
+
+                DataTable table = Database.ExecuteSelect(query);
+
+                cmbSection.DataSource = table;
+                cmbSection.DisplayMember = "section_name";
+                cmbSection.ValueMember = "id_section";
+                cmbSection.SelectedIndex = -1;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка загрузки секций: " + ex.Message);
             }
         }
 
@@ -87,7 +223,6 @@ namespace ConferenceApp
             dgvReports.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
             dgvReports.GridColor = Color.LightGray;
-
             dgvReports.EnableHeadersVisualStyles = false;
 
             dgvReports.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(230, 240, 250);
@@ -107,7 +242,7 @@ namespace ConferenceApp
 
         private void CenterTitle()
         {
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
+            lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
         }
 
         private void dgvReports_MouseDown(object sender, MouseEventArgs e)
@@ -122,11 +257,16 @@ namespace ConferenceApp
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            if (IsOrganizerOrAdmin())
+                return;
+
             if (!ValidateFields())
                 return;
 
             try
             {
+                string relativeFilePath = SaveSelectedFileIfNeeded();
+
                 string query = @"
                     EXEC dbo.usp_add_report
                         @topic = @Topic,
@@ -142,7 +282,7 @@ namespace ConferenceApp
                     new SqlParameter("@AuthorId", currentUserId),
                     new SqlParameter("@Annotation", GetNullableText(txtAnnotation.Text)),
                     new SqlParameter("@Keywords", GetNullableText(txtKeywords.Text)),
-                    new SqlParameter("@FilePath", GetNullableText(txtFilePath.Text))
+                    new SqlParameter("@FilePath", GetNullableText(relativeFilePath))
                 };
 
                 Database.ExecuteNonQuery(query, parameters);
@@ -158,6 +298,9 @@ namespace ConferenceApp
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
+            if (IsOrganizerOrAdmin())
+                return;
+
             if (selectedReportId == 0)
             {
                 MessageBox.Show("Выберите доклад.");
@@ -169,6 +312,8 @@ namespace ConferenceApp
 
             try
             {
+                string relativeFilePath = SaveSelectedFileIfNeeded();
+
                 string query = @"
                     UPDATE dbo.tb_reports
                     SET
@@ -186,7 +331,7 @@ namespace ConferenceApp
                     new SqlParameter("@Topic", txtTopic.Text.Trim()),
                     new SqlParameter("@Annotation", GetNullableText(txtAnnotation.Text)),
                     new SqlParameter("@Keywords", GetNullableText(txtKeywords.Text)),
-                    new SqlParameter("@FilePath", GetNullableText(txtFilePath.Text)),
+                    new SqlParameter("@FilePath", GetNullableText(relativeFilePath)),
                     new SqlParameter("@ReportId", selectedReportId),
                     new SqlParameter("@UserId", currentUserId)
                 };
@@ -211,6 +356,9 @@ namespace ConferenceApp
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
+            if (IsOrganizerOrAdmin())
+                return;
+
             if (selectedReportId == 0)
             {
                 MessageBox.Show("Выберите доклад.");
@@ -270,20 +418,206 @@ namespace ConferenceApp
             }
         }
 
+        private void btnAddToSection_Click(object sender, EventArgs e)
+        {
+            if (!IsOrganizerOrAdmin())
+                return;
+
+            if (selectedReportId == 0)
+            {
+                MessageBox.Show("Выберите доклад.");
+                return;
+            }
+
+            if (cmbSection.SelectedIndex < 0)
+            {
+                MessageBox.Show("Выберите секцию.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtLocation.Text))
+            {
+                MessageBox.Show("Введите место проведения.");
+                return;
+            }
+
+            try
+            {
+                if (ReportAlreadyInProgram(selectedReportId))
+                {
+                    UpdateReportInProgram();
+                    MessageBox.Show("Расписание доклада изменено.");
+                }
+                else
+                {
+                    AddReportToProgram();
+                    MessageBox.Show("Доклад добавлен в программу.");
+                }
+
+                int reportId = selectedReportId;
+
+                LoadReports();
+                SelectReportInGrid(reportId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка сохранения программы: " + ex.Message);
+            }
+        }
+
+        private bool ReportAlreadyInProgram(int reportId)
+        {
+            string query = @"
+                SELECT COUNT(*)
+                FROM dbo.tb_conference_program
+                WHERE id_report = @ReportId;
+            ";
+
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@ReportId", reportId)
+            };
+
+            object result = Database.ExecuteScalar(query, parameters);
+
+            return Convert.ToInt32(result) > 0;
+        }
+
+        private void AddReportToProgram()
+        {
+            string query = @"
+                EXEC dbo.usp_add_conference_program
+                    @id_report = @ReportId,
+                    @presentation_date = @PresentationDate,
+                    @presentation_time = @PresentationTime,
+                    @location = @Location,
+                    @id_section = @SectionId;
+            ";
+
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@ReportId", selectedReportId),
+                new SqlParameter("@PresentationDate", dtpDate.Value.Date),
+                new SqlParameter("@PresentationTime", dtpTime.Value.TimeOfDay),
+                new SqlParameter("@Location", txtLocation.Text.Trim()),
+                new SqlParameter("@SectionId", Convert.ToInt32(cmbSection.SelectedValue))
+            };
+
+            Database.ExecuteNonQuery(query, parameters);
+        }
+
+        private void UpdateReportInProgram()
+        {
+            string query = @"
+                UPDATE dbo.tb_conference_program
+                SET
+                    id_section = @SectionId,
+                    presentation_date = @PresentationDate,
+                    presentation_time = @PresentationTime,
+                    location = @Location
+                WHERE id_report = @ReportId;
+            ";
+
+            SqlParameter[] parameters =
+            {
+                new SqlParameter("@SectionId", Convert.ToInt32(cmbSection.SelectedValue)),
+                new SqlParameter("@PresentationDate", dtpDate.Value.Date),
+                new SqlParameter("@PresentationTime", dtpTime.Value.TimeOfDay),
+                new SqlParameter("@Location", txtLocation.Text.Trim()),
+                new SqlParameter("@ReportId", selectedReportId)
+            };
+
+            Database.ExecuteNonQuery(query, parameters);
+        }
+
         private void dgvReports_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0)
                 return;
 
-            DataGridViewRow row = dgvReports.Rows[e.RowIndex];
+            FillFieldsFromRow(dgvReports.Rows[e.RowIndex]);
+        }
 
+        private void FillFieldsFromRow(DataGridViewRow row)
+        {
             selectedReportId = Convert.ToInt32(row.Cells[0].Value);
 
-            txtTopic.Text = GetCellValue(row, 1);
-            txtAnnotation.Text = GetCellValue(row, 2);
-            txtKeywords.Text = GetCellValue(row, 3);
-            txtReviewStatus.Text = GetCellValue(row, 4);
-            txtFilePath.Text = GetCellValue(row, 5);
+            txtTopic.Text = GetCellValue(row, "Тема");
+            txtAnnotation.Text = GetCellValue(row, "Аннотация");
+            txtKeywords.Text = GetCellValue(row, "Ключевые слова");
+            txtFilePath.Text = GetCellValue(row, "Файл");
+
+            string status = GetCellValue(row, "Статус");
+
+            if (string.IsNullOrWhiteSpace(status))
+                status = GetCellValue(row, "Статус рецензирования");
+
+            txtReviewStatus.Text = status;
+
+            if (IsOrganizerOrAdmin())
+            {
+                FillProgramFields(row);
+            }
+
+            selectedSourceFilePath = "";
+        }
+
+        private void FillProgramFields(DataGridViewRow row)
+        {
+            string sectionId = GetCellValue(row, "ID секции");
+
+            if (!string.IsNullOrWhiteSpace(sectionId))
+            {
+                cmbSection.SelectedValue = Convert.ToInt32(sectionId);
+            }
+            else
+            {
+                cmbSection.SelectedIndex = -1;
+            }
+
+            string date = GetCellValue(row, "Дата");
+
+            if (DateTime.TryParse(date, out DateTime parsedDate))
+            {
+                dtpDate.Value = parsedDate;
+            }
+            else
+            {
+                dtpDate.Value = DateTime.Today;
+            }
+
+            string time = GetCellValue(row, "Время");
+
+            if (TimeSpan.TryParse(time, out TimeSpan parsedTime))
+            {
+                dtpTime.Value = DateTime.Today.Add(parsedTime);
+            }
+            else
+            {
+                dtpTime.Value = DateTime.Now;
+            }
+
+            txtLocation.Text = GetCellValue(row, "Место");
+        }
+
+        private void SelectReportInGrid(int reportId)
+        {
+            foreach (DataGridViewRow row in dgvReports.Rows)
+            {
+                if (Convert.ToInt32(row.Cells[0].Value) == reportId)
+                {
+                    row.Selected = true;
+                    dgvReports.CurrentCell = row.Cells[1];
+
+                    if (row.Index >= 0)
+                    {
+                        dgvReports.FirstDisplayedScrollingRowIndex = row.Index;
+                    }
+
+                    FillFieldsFromRow(row);
+                    return;
+                }
+            }
         }
 
         private void btnChooseFile_Click(object sender, EventArgs e)
@@ -293,8 +627,58 @@ namespace ConferenceApp
 
             if (dialog.ShowDialog() == DialogResult.OK)
             {
-                txtFilePath.Text = dialog.FileName;
+                selectedSourceFilePath = dialog.FileName;
+                txtFilePath.Text = ReportsFolderName + "\\" + Path.GetFileName(dialog.FileName);
             }
+        }
+
+        private string SaveSelectedFileIfNeeded()
+        {
+            if (string.IsNullOrWhiteSpace(selectedSourceFilePath))
+            {
+                if (string.IsNullOrWhiteSpace(txtFilePath.Text))
+                    return null;
+
+                return txtFilePath.Text.Trim();
+            }
+
+            if (!File.Exists(selectedSourceFilePath))
+            {
+                throw new FileNotFoundException("Выбранный файл не найден.");
+            }
+
+            string reportsDirectory = Path.Combine(Application.StartupPath, ReportsFolderName);
+            Directory.CreateDirectory(reportsDirectory);
+
+            string fileName = Path.GetFileName(selectedSourceFilePath);
+            string destinationPath = Path.Combine(reportsDirectory, fileName);
+
+            if (!IsSamePath(selectedSourceFilePath, destinationPath))
+            {
+                if (File.Exists(destinationPath))
+                {
+                    string name = Path.GetFileNameWithoutExtension(fileName);
+                    string extension = Path.GetExtension(fileName);
+                    string newFileName = name + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + extension;
+
+                    destinationPath = Path.Combine(reportsDirectory, newFileName);
+                }
+
+                File.Copy(selectedSourceFilePath, destinationPath);
+            }
+
+            selectedSourceFilePath = "";
+
+            return ReportsFolderName + "\\" + Path.GetFileName(destinationPath);
+        }
+
+        private bool IsSamePath(string firstPath, string secondPath)
+        {
+            return string.Equals(
+                Path.GetFullPath(firstPath).TrimEnd('\\'),
+                Path.GetFullPath(secondPath).TrimEnd('\\'),
+                StringComparison.OrdinalIgnoreCase
+            );
         }
 
         private void btnClear_Click(object sender, EventArgs e)
@@ -326,17 +710,36 @@ namespace ConferenceApp
             return value.Trim();
         }
 
-        private string GetCellValue(DataGridViewRow row, int index)
+        private string GetCellValue(DataGridViewRow row, string columnName)
         {
-            if (row.Cells[index].Value == null || row.Cells[index].Value == DBNull.Value)
+            int columnIndex = -1;
+
+            foreach (DataGridViewColumn column in dgvReports.Columns)
+            {
+                if (column.Name == columnName ||
+                    column.HeaderText == columnName ||
+                    column.DataPropertyName == columnName)
+                {
+                    columnIndex = column.Index;
+                    break;
+                }
+            }
+
+            if (columnIndex == -1)
                 return "";
 
-            return row.Cells[index].Value.ToString();
+            object value = row.Cells[columnIndex].Value;
+
+            if (value == null || value == DBNull.Value)
+                return "";
+
+            return value.ToString();
         }
 
         private void ClearFields()
         {
             selectedReportId = 0;
+            selectedSourceFilePath = "";
 
             txtTopic.Clear();
             txtAnnotation.Clear();
@@ -344,6 +747,15 @@ namespace ConferenceApp
             txtFilePath.Clear();
 
             txtReviewStatus.Text = "Статус изменяется после рецензирования";
+
+            if (cmbSection.Visible && cmbSection.Items.Count > 0)
+            {
+                cmbSection.SelectedIndex = -1;
+            }
+
+            dtpDate.Value = DateTime.Today;
+            dtpTime.Value = DateTime.Now;
+            txtLocation.Clear();
 
             if (dgvReports.Rows.Count > 0)
             {

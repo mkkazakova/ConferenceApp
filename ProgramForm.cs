@@ -8,20 +8,41 @@ namespace ConferenceApp
 {
     public partial class ProgramForm : Form
     {
+        private int currentUserId;
         private string currentUserRole;
 
-        public ProgramForm(string role)
+        private int selectedPresentationId = 0;
+        private int selectedReportId = 0;
+
+        public ProgramForm(int userId, string role)
         {
             InitializeComponent();
 
+            currentUserId = userId;
             currentUserRole = role;
 
             ConfigureAccessByRole();
             CenterTitle();
 
             LoadProgramCards();
-            LoadAcceptedReports();
-            LoadSections();
+        }
+
+        private bool IsOrganizerOrAdmin()
+        {
+            return currentUserRole == "Организатор" || currentUserRole == "Администратор";
+        }
+
+        private void ConfigureAccessByRole()
+        {
+            bool canManage = IsOrganizerOrAdmin();
+
+            btnAdd.Visible = canManage;
+            btnUpdate.Visible = canManage;
+            btnDelete.Visible = canManage;
+
+            btnAdd.Text = "Добавить доклад";
+            btnUpdate.Text = "Изменить доклад";
+            btnDelete.Text = "Удалить из программы";
         }
 
         private void LoadProgramCards()
@@ -30,8 +51,13 @@ namespace ConferenceApp
             {
                 flowProgram.Controls.Clear();
 
+                selectedPresentationId = 0;
+                selectedReportId = 0;
+
                 string query = @"
                     SELECT
+                        cp.id_presentation,
+                        r.id_report,
                         cp.presentation_date,
                         LEFT(CONVERT(NVARCHAR(8), cp.presentation_time, 108), 5) AS presentation_time,
                         s.section_name,
@@ -60,6 +86,7 @@ namespace ConferenceApp
                     emptyLabel.Font = new Font("Microsoft Sans Serif", 11F);
                     emptyLabel.ForeColor = Color.FromArgb(32, 58, 95);
                     emptyLabel.Margin = new Padding(10);
+
                     flowProgram.Controls.Add(emptyLabel);
                     return;
                 }
@@ -101,6 +128,9 @@ namespace ConferenceApp
 
         private void AddProgramCard(DataRow row)
         {
+            int presentationId = Convert.ToInt32(row["id_presentation"]);
+            int reportId = Convert.ToInt32(row["id_report"]);
+
             string time = row["presentation_time"].ToString();
             string section = row["section_name"].ToString();
             string topic = row["topic"].ToString();
@@ -118,6 +148,8 @@ namespace ConferenceApp
             card.BackColor = Color.White;
             card.BorderStyle = BorderStyle.FixedSingle;
             card.Margin = new Padding(5, 3, 5, 10);
+            card.Cursor = Cursors.Hand;
+            card.Tag = new ProgramCardData(presentationId, reportId);
 
             Label lblTime = new Label();
             lblTime.Text = time;
@@ -152,7 +184,43 @@ namespace ConferenceApp
             card.Controls.Add(lblTopic);
             card.Controls.Add(lblInfo);
 
+            card.Click += ProgramCard_Click;
+            lblTime.Click += ProgramCard_Click;
+            lblSection.Click += ProgramCard_Click;
+            lblTopic.Click += ProgramCard_Click;
+            lblInfo.Click += ProgramCard_Click;
+
             flowProgram.Controls.Add(card);
+        }
+
+        private void ProgramCard_Click(object sender, EventArgs e)
+        {
+            Control clickedControl = sender as Control;
+
+            Panel card = clickedControl as Panel;
+
+            if (card == null)
+            {
+                card = clickedControl.Parent as Panel;
+            }
+
+            if (card == null || card.Tag == null)
+                return;
+
+            ProgramCardData data = card.Tag as ProgramCardData;
+
+            selectedPresentationId = data.PresentationId;
+            selectedReportId = data.ReportId;
+
+            foreach (Control control in flowProgram.Controls)
+            {
+                if (control is Panel panel)
+                {
+                    panel.BackColor = Color.White;
+                }
+            }
+
+            card.BackColor = Color.FromArgb(210, 230, 250);
         }
 
         private string GetShortName(string firstName, string middleName, string lastName)
@@ -170,157 +238,90 @@ namespace ConferenceApp
             return result.Trim();
         }
 
-        private void LoadAcceptedReports()
-        {
-            try
-            {
-                string query = @"
-                    SELECT
-                        r.id_report,
-                        r.topic
-                    FROM dbo.tb_reports AS r
-                    WHERE r.review_status = N'Принят'
-                      AND NOT EXISTS (
-                          SELECT 1
-                          FROM dbo.tb_conference_program AS cp
-                          WHERE cp.id_report = r.id_report
-                      )
-                    ORDER BY r.topic;
-                ";
-
-                DataTable table = Database.ExecuteSelect(query);
-
-                cmbReport.DataSource = table;
-                cmbReport.DisplayMember = "topic";
-                cmbReport.ValueMember = "id_report";
-                cmbReport.SelectedIndex = -1;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ошибка загрузки докладов: " + ex.Message);
-            }
-        }
-
-        private void LoadSections()
-        {
-            try
-            {
-                string query = @"
-                    SELECT
-                        id_section,
-                        section_name
-                    FROM dbo.tb_sections
-                    ORDER BY section_name;
-                ";
-
-                DataTable table = Database.ExecuteSelect(query);
-
-                cmbSection.DataSource = table;
-                cmbSection.DisplayMember = "section_name";
-                cmbSection.ValueMember = "id_section";
-                cmbSection.SelectedIndex = -1;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ошибка загрузки секций: " + ex.Message);
-            }
-        }
-
-        private void ConfigureAccessByRole()
-        {
-            bool canManage = currentUserRole == "Организатор" || currentUserRole == "Администратор";
-
-            lblReport.Visible = canManage;
-            lblSection.Visible = canManage;
-            lblDate.Visible = canManage;
-            lblTime.Visible = canManage;
-            lblLocation.Visible = canManage;
-
-            cmbReport.Visible = canManage;
-            cmbSection.Visible = canManage;
-            dtpDate.Visible = canManage;
-            dtpTime.Visible = canManage;
-            txtLocation.Visible = canManage;
-            btnAdd.Visible = canManage;
-        }
-
-        private void CenterTitle()
-        {
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
-        }
-
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            if (!ValidateFields())
+            ReportsForm reportsForm = new ReportsForm(currentUserId, currentUserRole);
+            reportsForm.ShowDialog();
+
+            LoadProgramCards();
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            if (selectedReportId == 0)
+            {
+                MessageBox.Show("Выберите доклад в программе.");
+                return;
+            }
+
+            ReportsForm reportsForm = new ReportsForm(currentUserId, currentUserRole, selectedReportId);
+            reportsForm.ShowDialog();
+
+            LoadProgramCards();
+        }
+
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            if (selectedPresentationId == 0)
+            {
+                MessageBox.Show("Выберите доклад в программе.");
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Удалить выбранный доклад из программы конференции?",
+                "Подтверждение",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (result != DialogResult.Yes)
                 return;
 
             try
             {
                 string query = @"
-                    EXEC dbo.usp_add_conference_program
-                        @id_report = @ReportId,
-                        @presentation_date = @PresentationDate,
-                        @presentation_time = @PresentationTime,
-                        @location = @Location,
-                        @id_section = @SectionId;
+                    DELETE FROM dbo.tb_conference_program
+                    WHERE id_presentation = @PresentationId;
                 ";
 
                 SqlParameter[] parameters =
                 {
-                    new SqlParameter("@ReportId", Convert.ToInt32(cmbReport.SelectedValue)),
-                    new SqlParameter("@PresentationDate", dtpDate.Value.Date),
-                    new SqlParameter("@PresentationTime", dtpTime.Value.TimeOfDay),
-                    new SqlParameter("@Location", txtLocation.Text.Trim()),
-                    new SqlParameter("@SectionId", Convert.ToInt32(cmbSection.SelectedValue))
+                    new SqlParameter("@PresentationId", selectedPresentationId)
                 };
 
                 Database.ExecuteNonQuery(query, parameters);
 
-                MessageBox.Show("Доклад добавлен в программу.");
+                MessageBox.Show("Доклад удален из программы.");
 
                 LoadProgramCards();
-                LoadAcceptedReports();
-                ClearFields();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ошибка добавления в программу: " + ex.Message);
+                MessageBox.Show("Ошибка удаления из программы: " + ex.Message);
             }
         }
 
-        private bool ValidateFields()
+        private void CenterTitle()
         {
-            if (cmbReport.SelectedIndex < 0)
-            {
-                MessageBox.Show("Выберите доклад.");
-                return false;
-            }
-
-            if (cmbSection.SelectedIndex < 0)
-            {
-                MessageBox.Show("Выберите секцию.");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(txtLocation.Text))
-            {
-                MessageBox.Show("Введите место проведения.");
-                return false;
-            }
-
-            return true;
-        }
-
-        private void ClearFields()
-        {
-            cmbReport.SelectedIndex = -1;
-            cmbSection.SelectedIndex = -1;
-            txtLocation.Clear();
+            lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
         }
 
         private void btnClose_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private class ProgramCardData
+        {
+            public int PresentationId { get; private set; }
+            public int ReportId { get; private set; }
+
+            public ProgramCardData(int presentationId, int reportId)
+            {
+                PresentationId = presentationId;
+                ReportId = reportId;
+            }
         }
     }
 }

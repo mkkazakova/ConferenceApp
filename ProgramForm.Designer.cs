@@ -7,19 +7,9 @@
         private System.Windows.Forms.Label lblTitle;
         private System.Windows.Forms.FlowLayoutPanel flowProgram;
 
-        private System.Windows.Forms.Label lblReport;
-        private System.Windows.Forms.Label lblSection;
-        private System.Windows.Forms.Label lblDate;
-        private System.Windows.Forms.Label lblTime;
-        private System.Windows.Forms.Label lblLocation;
-
-        private System.Windows.Forms.ComboBox cmbReport;
-        private System.Windows.Forms.ComboBox cmbSection;
-        private System.Windows.Forms.DateTimePicker dtpDate;
-        private System.Windows.Forms.DateTimePicker dtpTime;
-        private System.Windows.Forms.TextBox txtLocation;
-
         private System.Windows.Forms.Button btnAdd;
+        private System.Windows.Forms.Button btnUpdate;
+        private System.Windows.Forms.Button btnDelete;
         private System.Windows.Forms.Button btnClose;
 
         protected override void Dispose(bool disposing)
@@ -35,106 +25,81 @@
             this.lblTitle = new System.Windows.Forms.Label();
             this.flowProgram = new System.Windows.Forms.FlowLayoutPanel();
 
-            this.lblReport = new System.Windows.Forms.Label();
-            this.lblSection = new System.Windows.Forms.Label();
-            this.lblDate = new System.Windows.Forms.Label();
-            this.lblTime = new System.Windows.Forms.Label();
-            this.lblLocation = new System.Windows.Forms.Label();
-
-            this.cmbReport = new System.Windows.Forms.ComboBox();
-            this.cmbSection = new System.Windows.Forms.ComboBox();
-            this.dtpDate = new System.Windows.Forms.DateTimePicker();
-            this.dtpTime = new System.Windows.Forms.DateTimePicker();
-            this.txtLocation = new System.Windows.Forms.TextBox();
-
             this.btnAdd = new System.Windows.Forms.Button();
+            this.btnUpdate = new System.Windows.Forms.Button();
+            this.btnDelete = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
 
             this.SuspendLayout();
 
+            // lblTitle
             this.lblTitle.AutoSize = true;
             this.lblTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Bold);
             this.lblTitle.ForeColor = System.Drawing.Color.FromArgb(32, 58, 95);
             this.lblTitle.Location = new System.Drawing.Point(330, 25);
+            this.lblTitle.Name = "lblTitle";
+            this.lblTitle.Size = new System.Drawing.Size(305, 31);
+            this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "Программа конференции";
 
+            // flowProgram
             this.flowProgram.Location = new System.Drawing.Point(30, 75);
+            this.flowProgram.Name = "flowProgram";
             this.flowProgram.Size = new System.Drawing.Size(940, 450);
             this.flowProgram.BackColor = System.Drawing.Color.FromArgb(240, 247, 255);
             this.flowProgram.AutoScroll = true;
             this.flowProgram.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowProgram.WrapContents = false;
+            this.flowProgram.TabIndex = 1;
 
-            this.lblReport.Location = new System.Drawing.Point(30, 405);
-            this.lblReport.Size = new System.Drawing.Size(130, 20);
-            this.lblReport.Text = "Доклад:";
-
-            this.cmbReport.Location = new System.Drawing.Point(170, 402);
-            this.cmbReport.Size = new System.Drawing.Size(800, 24);
-            this.cmbReport.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-
-            this.lblSection.Location = new System.Drawing.Point(30, 440);
-            this.lblSection.Size = new System.Drawing.Size(130, 20);
-            this.lblSection.Text = "Секция:";
-
-            this.cmbSection.Location = new System.Drawing.Point(170, 437);
-            this.cmbSection.Size = new System.Drawing.Size(800, 24);
-            this.cmbSection.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-
-            this.lblDate.Location = new System.Drawing.Point(30, 475);
-            this.lblDate.Size = new System.Drawing.Size(130, 20);
-            this.lblDate.Text = "Дата:";
-
-            this.dtpDate.Location = new System.Drawing.Point(170, 472);
-            this.dtpDate.Size = new System.Drawing.Size(250, 22);
-            this.dtpDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-
-            this.lblTime.Location = new System.Drawing.Point(450, 475);
-            this.lblTime.Size = new System.Drawing.Size(70, 20);
-            this.lblTime.Text = "Время:";
-
-            this.dtpTime.Location = new System.Drawing.Point(525, 472);
-            this.dtpTime.Size = new System.Drawing.Size(150, 22);
-            this.dtpTime.Format = System.Windows.Forms.DateTimePickerFormat.Time;
-            this.dtpTime.ShowUpDown = true;
-
-            this.lblLocation.Location = new System.Drawing.Point(30, 510);
-            this.lblLocation.Size = new System.Drawing.Size(130, 20);
-            this.lblLocation.Text = "Место:";
-
-            this.txtLocation.Location = new System.Drawing.Point(170, 507);
-            this.txtLocation.Size = new System.Drawing.Size(800, 22);
-
-            this.btnAdd.Location = new System.Drawing.Point(170, 560);
-            this.btnAdd.Size = new System.Drawing.Size(180, 35);
-            this.btnAdd.Text = "Добавить в программу";
+            // btnAdd
+            this.btnAdd.Location = new System.Drawing.Point(30, 555);
+            this.btnAdd.Name = "btnAdd";
+            this.btnAdd.Size = new System.Drawing.Size(190, 35);
+            this.btnAdd.TabIndex = 2;
+            this.btnAdd.Text = "Добавить доклад";
+            this.btnAdd.UseVisualStyleBackColor = true;
             this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
 
-            this.btnClose.Location = new System.Drawing.Point(830, 560);
+            // btnUpdate
+            this.btnUpdate.Location = new System.Drawing.Point(240, 555);
+            this.btnUpdate.Name = "btnUpdate";
+            this.btnUpdate.Size = new System.Drawing.Size(190, 35);
+            this.btnUpdate.TabIndex = 3;
+            this.btnUpdate.Text = "Изменить доклад";
+            this.btnUpdate.UseVisualStyleBackColor = true;
+            this.btnUpdate.Click += new System.EventHandler(this.btnUpdate_Click);
+
+            // btnDelete
+            this.btnDelete.Location = new System.Drawing.Point(450, 555);
+            this.btnDelete.Name = "btnDelete";
+            this.btnDelete.Size = new System.Drawing.Size(210, 35);
+            this.btnDelete.TabIndex = 4;
+            this.btnDelete.Text = "Удалить из программы";
+            this.btnDelete.UseVisualStyleBackColor = true;
+            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
+
+            // btnClose
+            this.btnClose.Location = new System.Drawing.Point(830, 555);
+            this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(140, 35);
+            this.btnClose.TabIndex = 5;
             this.btnClose.Text = "Назад";
+            this.btnClose.UseVisualStyleBackColor = true;
             this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
 
+            // ProgramForm
             this.BackColor = System.Drawing.Color.FromArgb(240, 247, 255);
             this.ClientSize = new System.Drawing.Size(1000, 620);
 
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this.flowProgram);
-
-            this.Controls.Add(this.lblReport);
-            this.Controls.Add(this.cmbReport);
-            this.Controls.Add(this.lblSection);
-            this.Controls.Add(this.cmbSection);
-            this.Controls.Add(this.lblDate);
-            this.Controls.Add(this.dtpDate);
-            this.Controls.Add(this.lblTime);
-            this.Controls.Add(this.dtpTime);
-            this.Controls.Add(this.lblLocation);
-            this.Controls.Add(this.txtLocation);
-
             this.Controls.Add(this.btnAdd);
+            this.Controls.Add(this.btnUpdate);
+            this.Controls.Add(this.btnDelete);
             this.Controls.Add(this.btnClose);
 
+            this.Name = "ProgramForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Программа конференции";
 

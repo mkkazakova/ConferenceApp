@@ -43,7 +43,6 @@ namespace ConferenceApp
             btnReviews.Visible = false;
             btnProgram.Visible = false;
             btnMaterials.Visible = false;
-            btnStatistics.Visible = false;
 
             btnReports.Text = "Доклады";
 
@@ -67,7 +66,6 @@ namespace ConferenceApp
                 btnReviews.Visible = true;
                 btnProgram.Visible = true;
                 btnMaterials.Visible = true;
-                btnStatistics.Visible = true;
             }
             else if (currentUserRole == "Администратор")
             {
@@ -77,7 +75,6 @@ namespace ConferenceApp
                 btnReviews.Visible = true;
                 btnProgram.Visible = true;
                 btnMaterials.Visible = true;
-                btnStatistics.Visible = true;
             }
         }
 
@@ -102,7 +99,7 @@ namespace ConferenceApp
             }
             else
             {
-                ReportsForm reportsForm = new ReportsForm(currentUserId);
+                ReportsForm reportsForm = new ReportsForm(currentUserId, currentUserRole);
                 reportsForm.ShowDialog();
             }
         }
@@ -115,7 +112,7 @@ namespace ConferenceApp
 
         private void btnProgram_Click(object sender, EventArgs e)
         {
-            ProgramForm programForm = new ProgramForm(currentUserRole);
+            ProgramForm programForm = new ProgramForm(currentUserId, currentUserRole);
             programForm.ShowDialog();
         }
 
@@ -129,7 +126,7 @@ namespace ConferenceApp
         {
             returnToLogin = true;
             loginForm.Show();
-            this.Close();
+            Close();
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
