@@ -37,11 +37,8 @@ namespace ConferenceApp
                     p.participant_status AS [Статус участия],
                     p.user_role AS [Роль],
                     p.workplace AS [Место работы],
-                    p.academic_degree AS [Учёная степень],
-                    COUNT(rv.id_review) AS [Проверено докладов]
+                    p.academic_degree AS [Учёная степень]
                 FROM dbo.tb_participants AS p
-                LEFT JOIN dbo.tb_reviews AS rv
-                    ON p.id_participant = rv.id_reviewer
                 WHERE p.user_role IN (N'Участник', N'Рецензент')
             ";
 
@@ -74,17 +71,6 @@ namespace ConferenceApp
             }
 
             query += @"
-                GROUP BY
-                    p.id_participant,
-                    p.last_name,
-                    p.first_name,
-                    p.middle_name,
-                    p.email,
-                    p.phone,
-                    p.participant_status,
-                    p.user_role,
-                    p.workplace,
-                    p.academic_degree
                 ORDER BY
                     p.user_role,
                     p.last_name,

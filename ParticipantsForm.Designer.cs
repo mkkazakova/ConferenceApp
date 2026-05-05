@@ -253,74 +253,88 @@
             this.gbDetails.Text = "Информация о выбранном пользователе";
 
             // lblFullName
-            this.lblFullName.Location = new System.Drawing.Point(20, 30);
-            this.lblFullName.Size = new System.Drawing.Size(120, 20);
+            this.lblFullName.Location = new System.Drawing.Point(20, 28);
+            this.lblFullName.Name = "lblFullName";
+            this.lblFullName.Size = new System.Drawing.Size(55, 20);
             this.lblFullName.Text = "ФИО:";
 
             // lblFullNameValue
-            this.lblFullNameValue.Location = new System.Drawing.Point(150, 30);
-            this.lblFullNameValue.Size = new System.Drawing.Size(250, 20);
+            this.lblFullNameValue.Location = new System.Drawing.Point(78, 28);
+            this.lblFullNameValue.Name = "lblFullNameValue";
+            this.lblFullNameValue.Size = new System.Drawing.Size(240, 20);
             this.lblFullNameValue.Text = "-";
 
             // lblEmail
-            this.lblEmail.Location = new System.Drawing.Point(20, 60);
-            this.lblEmail.Size = new System.Drawing.Size(120, 20);
+            this.lblEmail.Location = new System.Drawing.Point(20, 57);
+            this.lblEmail.Name = "lblEmail";
+            this.lblEmail.Size = new System.Drawing.Size(55, 20);
             this.lblEmail.Text = "Email:";
 
             // lblEmailValue
-            this.lblEmailValue.Location = new System.Drawing.Point(150, 60);
-            this.lblEmailValue.Size = new System.Drawing.Size(250, 20);
+            this.lblEmailValue.Location = new System.Drawing.Point(78, 57);
+            this.lblEmailValue.Name = "lblEmailValue";
+            this.lblEmailValue.Size = new System.Drawing.Size(240, 20);
             this.lblEmailValue.Text = "-";
 
+            // lblAcademicDegree
+            this.lblAcademicDegree.Location = new System.Drawing.Point(20, 82);
+            this.lblAcademicDegree.Name = "lblAcademicDegree";
+            this.lblAcademicDegree.Size = new System.Drawing.Size(55, 20);
+            this.lblAcademicDegree.Text = "Степень:";
+
+            // lblAcademicDegreeValue
+            this.lblAcademicDegreeValue.Location = new System.Drawing.Point(78, 82);
+            this.lblAcademicDegreeValue.Name = "lblAcademicDegreeValue";
+            this.lblAcademicDegreeValue.Size = new System.Drawing.Size(240, 20);
+            this.lblAcademicDegreeValue.Text = "-";
+
             // lblPhone
-            this.lblPhone.Location = new System.Drawing.Point(405, 30);
-            this.lblPhone.Size = new System.Drawing.Size(120, 20);
+            this.lblPhone.Location = new System.Drawing.Point(335, 28);
+            this.lblPhone.Name = "lblPhone";
+            this.lblPhone.Size = new System.Drawing.Size(72, 20);
             this.lblPhone.Text = "Телефон:";
 
             // lblPhoneValue
-            this.lblPhoneValue.Location = new System.Drawing.Point(535, 30);
+            this.lblPhoneValue.Location = new System.Drawing.Point(410, 28);
+            this.lblPhoneValue.Name = "lblPhoneValue";
             this.lblPhoneValue.Size = new System.Drawing.Size(170, 20);
             this.lblPhoneValue.Text = "-";
 
             // lblParticipantStatus
-            this.lblParticipantStatus.Location = new System.Drawing.Point(405, 60);
-            this.lblParticipantStatus.Size = new System.Drawing.Size(120, 20);
-            this.lblParticipantStatus.Text = "Статус участия:";
+            this.lblParticipantStatus.Location = new System.Drawing.Point(335, 57);
+            this.lblParticipantStatus.Name = "lblParticipantStatus";
+            this.lblParticipantStatus.Size = new System.Drawing.Size(72, 20);
+            this.lblParticipantStatus.Text = "Статус:";
 
             // lblParticipantStatusValue
-            this.lblParticipantStatusValue.Location = new System.Drawing.Point(535, 60);
+            this.lblParticipantStatusValue.Location = new System.Drawing.Point(410, 57);
+            this.lblParticipantStatusValue.Name = "lblParticipantStatusValue";
             this.lblParticipantStatusValue.Size = new System.Drawing.Size(170, 20);
             this.lblParticipantStatusValue.Text = "-";
 
             // lblRole
-            this.lblRole.Location = new System.Drawing.Point(705, 30);
-            this.lblRole.Size = new System.Drawing.Size(120, 20);
+            this.lblRole.Location = new System.Drawing.Point(595, 28);
+            this.lblRole.Name = "lblRole";
+            this.lblRole.Size = new System.Drawing.Size(45, 20);
             this.lblRole.Text = "Роль:";
 
             // lblRoleValue
-            this.lblRoleValue.Location = new System.Drawing.Point(825, 30);
-            this.lblRoleValue.Size = new System.Drawing.Size(80, 20);
+            this.lblRoleValue.Location = new System.Drawing.Point(643, 28);
+            this.lblRoleValue.Name = "lblRoleValue";
+            this.lblRoleValue.Size = new System.Drawing.Size(245, 20);
             this.lblRoleValue.Text = "-";
 
             // lblWorkplace
-            this.lblWorkplace.Location = new System.Drawing.Point(705, 60);
-            this.lblWorkplace.Size = new System.Drawing.Size(120, 20);
-            this.lblWorkplace.Text = "Место работы:";
+            this.lblWorkplace.Location = new System.Drawing.Point(595, 57);
+            this.lblWorkplace.Name = "lblWorkplace";
+            this.lblWorkplace.Size = new System.Drawing.Size(45, 20);
+            this.lblWorkplace.Text = "Место:";
 
             // lblWorkplaceValue
-            this.lblWorkplaceValue.Location = new System.Drawing.Point(825, 60);
-            this.lblWorkplaceValue.Size = new System.Drawing.Size(80, 20);
+            this.lblWorkplaceValue.Location = new System.Drawing.Point(643, 57);
+            this.lblWorkplaceValue.Name = "lblWorkplaceValue";
+            this.lblWorkplaceValue.Size = new System.Drawing.Size(245, 20);
             this.lblWorkplaceValue.Text = "-";
-
-            // lblAcademicDegree
-            this.lblAcademicDegree.Location = new System.Drawing.Point(20, 82);
-            this.lblAcademicDegree.Size = new System.Drawing.Size(120, 20);
-            this.lblAcademicDegree.Text = "Учёная степень:";
-
-            // lblAcademicDegreeValue
-            this.lblAcademicDegreeValue.Location = new System.Drawing.Point(150, 82);
-            this.lblAcademicDegreeValue.Size = new System.Drawing.Size(250, 20);
-            this.lblAcademicDegreeValue.Text = "-";
 
             // gbUserReports
             this.gbUserReports.Controls.Add(this.dgvUserReports);
