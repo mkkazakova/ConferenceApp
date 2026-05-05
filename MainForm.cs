@@ -26,6 +26,7 @@ namespace ConferenceApp
             ConfigureAccessByRole();
 
             btnProfile.Click += btnProfile_Click;
+            btnParticipants.Click += btnParticipants_Click;
             btnReports.Click += btnReports_Click;
             btnSections.Click += btnSections_Click;
             btnProgram.Click += btnProgram_Click;
@@ -57,13 +58,6 @@ namespace ConferenceApp
             {
                 btnReports.Visible = true;
                 btnReports.Text = "Доклады для рецензирования";
-
-                btnReviews.Visible = false;
-                btnSections.Visible = false;
-                btnProgram.Visible = false;
-                btnMaterials.Visible = false;
-                btnParticipants.Visible = false;
-                btnStatistics.Visible = false;
             }
             else if (currentUserRole == "Организатор")
             {
@@ -91,6 +85,12 @@ namespace ConferenceApp
         {
             ProfileForm profileForm = new ProfileForm(currentUserId, currentUserRole);
             profileForm.ShowDialog();
+        }
+
+        private void btnParticipants_Click(object sender, EventArgs e)
+        {
+            ParticipantsForm participantsForm = new ParticipantsForm();
+            participantsForm.ShowDialog();
         }
 
         private void btnReports_Click(object sender, EventArgs e)

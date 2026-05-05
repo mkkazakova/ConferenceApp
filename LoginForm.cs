@@ -62,6 +62,12 @@ namespace ConferenceApp
             this.Hide();
         }
 
+        private void lnkRegister_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            RegisterForm registerForm = new RegisterForm();
+            registerForm.ShowDialog();
+        }
+
         private string GetSha256Hash(string input)
         {
             using (SHA256 sha256 = SHA256.Create())
