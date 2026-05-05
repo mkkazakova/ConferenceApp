@@ -91,7 +91,7 @@ namespace ConferenceApp
 
         private void btnParticipants_Click(object sender, EventArgs e)
         {
-            ParticipantsForm participantsForm = new ParticipantsForm();
+            ParticipantsForm participantsForm = new ParticipantsForm(currentUserRole);
             participantsForm.ShowDialog();
         }
 
