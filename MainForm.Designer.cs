@@ -17,6 +17,7 @@
         private System.Windows.Forms.Button btnReviews;
         private System.Windows.Forms.Button btnProgram;
         private System.Windows.Forms.Button btnMaterials;
+        private System.Windows.Forms.Button btnStatistics;
         private System.Windows.Forms.Button btnExit;
 
         protected override void Dispose(bool disposing)
@@ -44,6 +45,7 @@
             this.btnReviews = new System.Windows.Forms.Button();
             this.btnProgram = new System.Windows.Forms.Button();
             this.btnMaterials = new System.Windows.Forms.Button();
+            this.btnStatistics = new System.Windows.Forms.Button();
             this.btnExit = new System.Windows.Forms.Button();
 
             this.menuPanel.SuspendLayout();
@@ -98,10 +100,11 @@
             this.menuPanel.Controls.Add(this.btnReviews);
             this.menuPanel.Controls.Add(this.btnProgram);
             this.menuPanel.Controls.Add(this.btnMaterials);
+            this.menuPanel.Controls.Add(this.btnStatistics);
             this.menuPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.menuPanel.Location = new System.Drawing.Point(221, 228);
             this.menuPanel.Name = "menuPanel";
-            this.menuPanel.Size = new System.Drawing.Size(400, 490);
+            this.menuPanel.Size = new System.Drawing.Size(400, 570);
             this.menuPanel.TabIndex = 4;
             this.menuPanel.WrapContents = false;
 
@@ -189,11 +192,23 @@
             this.btnMaterials.Text = "Материалы";
             this.btnMaterials.UseVisualStyleBackColor = false;
 
+            // btnStatistics
+            this.btnStatistics.BackColor = System.Drawing.Color.FromArgb(194, 224, 255);
+            this.btnStatistics.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnStatistics.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold);
+            this.btnStatistics.Margin = new System.Windows.Forms.Padding(0, 0, 0, 15);
+            this.btnStatistics.Name = "btnStatistics";
+            this.btnStatistics.Size = new System.Drawing.Size(400, 55);
+            this.btnStatistics.TabIndex = 7;
+            this.btnStatistics.TabStop = false;
+            this.btnStatistics.Text = "Статистика";
+            this.btnStatistics.UseVisualStyleBackColor = false;
+
             // btnExit
             this.btnExit.BackColor = System.Drawing.Color.FromArgb(230, 230, 230);
             this.btnExit.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnExit.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F);
-            this.btnExit.Location = new System.Drawing.Point(651, 730);
+            this.btnExit.Location = new System.Drawing.Point(651, 810);
             this.btnExit.Name = "btnExit";
             this.btnExit.Size = new System.Drawing.Size(120, 39);
             this.btnExit.TabIndex = 5;
@@ -206,7 +221,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(240, 247, 255);
-            this.ClientSize = new System.Drawing.Size(842, 790);
+            this.ClientSize = new System.Drawing.Size(842, 870);
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this.lblUser);
             this.Controls.Add(this.lblRole);

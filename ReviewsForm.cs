@@ -9,57 +9,137 @@ namespace ConferenceApp
     public partial class ReviewsForm : Form
     {
         private int currentReviewerId;
+        private string currentUserRole;
+        private bool isOrganizerMode;
+
         private int selectedReportId = 0;
         private int selectedReviewId = 0;
 
-        public ReviewsForm(int reviewerId)
+        public ReviewsForm(int reviewerId) : this(reviewerId, "Рецензент")
+        {
+        }
+
+        public ReviewsForm(int reviewerId, string userRole)
         {
             InitializeComponent();
 
             currentReviewerId = reviewerId;
+            currentUserRole = userRole;
+            isOrganizerMode = currentUserRole == "Организатор" || currentUserRole == "Администратор";
 
             SetupGridStyle();
+            ConfigureAccessByRole();
             CenterTitle();
             LoadReports();
 
             dgvReports.MouseDown += dgvReports_MouseDown;
         }
 
+        private void ConfigureAccessByRole()
+        {
+            if (isOrganizerMode)
+            {
+                lblTitle.Text = "Рецензии докладов";
+                Text = "Рецензии докладов";
+
+                btnSave.Visible = false;
+                btnClear.Text = "Отменить рецензирование";
+
+                numNovelty.Enabled = false;
+                numRelevance.Enabled = false;
+                numQuality.Enabled = false;
+                cmbResult.Enabled = false;
+                txtComments.ReadOnly = true;
+            }
+            else
+            {
+                lblTitle.Text = "Рецензирование докладов";
+                Text = "Рецензирование докладов";
+
+                btnSave.Visible = true;
+                btnClear.Text = "Очистить";
+
+                numNovelty.Enabled = true;
+                numRelevance.Enabled = true;
+                numQuality.Enabled = true;
+                cmbResult.Enabled = true;
+                txtComments.ReadOnly = false;
+            }
+        }
+
         private void LoadReports()
         {
             try
             {
-                string query = @"
-                    SELECT
-                        r.id_report AS [ID],
-                        rv.id_review AS [ReviewID],
-                        r.topic AS [Тема],
-                        p.last_name + N' ' + p.first_name + N' ' + ISNULL(p.middle_name, N'') AS [Автор],
-                        r.review_status AS [Статус доклада],
-                        ISNULL(CONVERT(NVARCHAR(10), rv.novelty_score), N'') AS [Новизна],
-                        ISNULL(CONVERT(NVARCHAR(10), rv.relevance_score), N'') AS [Актуальность],
-                        ISNULL(CONVERT(NVARCHAR(10), rv.quality_score), N'') AS [Качество],
-                        ISNULL(rv.review_result, N'Не рецензирован') AS [Мой результат],
-                        r.annotation AS [Аннотация],
-                        r.keywords AS [Ключевые слова],
-                        r.file_path AS [Файл],
-                        rv.comments AS [Комментарий]
-                    FROM dbo.tb_reports AS r
-                    INNER JOIN dbo.tb_participants AS p
-                        ON r.id_author = p.id_participant
-                    LEFT JOIN dbo.tb_reviews AS rv
-                        ON r.id_report = rv.id_report
-                       AND rv.id_reviewer = @ReviewerId
-                    WHERE r.id_author <> @ReviewerId
-                    ORDER BY
-                        CASE WHEN rv.id_review IS NULL THEN 0 ELSE 1 END,
-                        r.id_report DESC;
-                ";
+                string query;
+                SqlParameter[] parameters;
 
-                SqlParameter[] parameters =
+                if (isOrganizerMode)
                 {
-                    new SqlParameter("@ReviewerId", currentReviewerId)
-                };
+                    query = @"
+                        SELECT
+                            r.id_report AS [ID],
+                            rv.id_review AS [ReviewID],
+                            r.topic AS [Тема],
+                            a.last_name + N' ' + a.first_name + N' ' + ISNULL(a.middle_name, N'') AS [Автор],
+                            r.review_status AS [Статус доклада],
+                            ISNULL(rev.last_name + N' ' + rev.first_name + N' ' + ISNULL(rev.middle_name, N''), N'Не назначен') AS [Рецензент],
+                            ISNULL(CONVERT(NVARCHAR(10), rv.novelty_score), N'') AS [Новизна],
+                            ISNULL(CONVERT(NVARCHAR(10), rv.relevance_score), N'') AS [Актуальность],
+                            ISNULL(CONVERT(NVARCHAR(10), rv.quality_score), N'') AS [Качество],
+                            ISNULL(rv.review_result, N'Не рецензирован') AS [Результат],
+                            r.annotation AS [Аннотация],
+                            r.keywords AS [Ключевые слова],
+                            r.file_path AS [Файл],
+                            rv.comments AS [Комментарий]
+                        FROM dbo.tb_reports AS r
+                        INNER JOIN dbo.tb_participants AS a
+                            ON r.id_author = a.id_participant
+                        LEFT JOIN dbo.tb_reviews AS rv
+                            ON r.id_report = rv.id_report
+                        LEFT JOIN dbo.tb_participants AS rev
+                            ON rv.id_reviewer = rev.id_participant
+                        ORDER BY
+                            CASE WHEN rv.id_review IS NULL THEN 0 ELSE 1 END,
+                            r.id_report DESC;
+                    ";
+
+                    parameters = new SqlParameter[0];
+                }
+                else
+                {
+                    query = @"
+                        SELECT
+                            r.id_report AS [ID],
+                            rv.id_review AS [ReviewID],
+                            r.topic AS [Тема],
+                            a.last_name + N' ' + a.first_name + N' ' + ISNULL(a.middle_name, N'') AS [Автор],
+                            r.review_status AS [Статус доклада],
+                            ISNULL(CONVERT(NVARCHAR(10), rv.novelty_score), N'') AS [Новизна],
+                            ISNULL(CONVERT(NVARCHAR(10), rv.relevance_score), N'') AS [Актуальность],
+                            ISNULL(CONVERT(NVARCHAR(10), rv.quality_score), N'') AS [Качество],
+                            ISNULL(rv.review_result, N'Не рецензирован') AS [Результат],
+                            r.annotation AS [Аннотация],
+                            r.keywords AS [Ключевые слова],
+                            r.file_path AS [Файл],
+                            rv.comments AS [Комментарий]
+                        FROM dbo.tb_reports AS r
+                        INNER JOIN dbo.tb_participants AS a
+                            ON r.id_author = a.id_participant
+                        LEFT JOIN dbo.tb_reviews AS rv
+                            ON r.id_report = rv.id_report
+                           AND rv.id_reviewer = @ReviewerId
+                        WHERE r.id_author <> @ReviewerId
+                        ORDER BY
+                            CASE WHEN rv.id_review IS NULL THEN 0 ELSE 1 END,
+                            r.id_report DESC;
+                    ";
+
+                    parameters = new SqlParameter[]
+                    {
+                        new SqlParameter("@ReviewerId", currentReviewerId)
+                    };
+                }
 
                 DataTable table = Database.ExecuteSelect(query, parameters);
 
@@ -112,16 +192,19 @@ namespace ConferenceApp
             dgvReports.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvReports.GridColor = Color.LightGray;
             dgvReports.EnableHeadersVisualStyles = false;
+
             dgvReports.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(230, 240, 250);
             dgvReports.ColumnHeadersDefaultCellStyle.ForeColor = Color.Black;
             dgvReports.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(230, 240, 250);
             dgvReports.ColumnHeadersDefaultCellStyle.SelectionForeColor = Color.Black;
             dgvReports.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
+
             dgvReports.DefaultCellStyle.BackColor = Color.White;
             dgvReports.DefaultCellStyle.ForeColor = Color.Black;
             dgvReports.DefaultCellStyle.SelectionBackColor = Color.FromArgb(210, 230, 250);
             dgvReports.DefaultCellStyle.SelectionForeColor = Color.Black;
             dgvReports.DefaultCellStyle.Font = new Font("Microsoft Sans Serif", 9F);
+
             dgvReports.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 252, 255);
         }
 
@@ -132,7 +215,8 @@ namespace ConferenceApp
 
         private void dgvReports_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0) return;
+            if (e.RowIndex < 0)
+                return;
 
             DataGridViewRow row = dgvReports.Rows[e.RowIndex];
 
@@ -155,7 +239,8 @@ namespace ConferenceApp
             SetNumericValue(numRelevance, GetCellValue(row, "Актуальность"));
             SetNumericValue(numQuality, GetCellValue(row, "Качество"));
 
-            string result = GetCellValue(row, "Мой результат");
+            string result = GetCellValue(row, "Результат");
+
             if (result == "Принят" || result == "Отклонен" || result == "На доработку")
                 cmbResult.SelectedItem = result;
             else
@@ -164,6 +249,12 @@ namespace ConferenceApp
 
         private void btnSave_Click(object sender, EventArgs e)
         {
+            if (isOrganizerMode)
+            {
+                MessageBox.Show("Организатор не может редактировать рецензирование.");
+                return;
+            }
+
             if (selectedReportId == 0)
             {
                 MessageBox.Show("Выберите доклад.");
@@ -244,7 +335,55 @@ namespace ConferenceApp
 
         private void btnClear_Click(object sender, EventArgs e)
         {
-            ClearFields();
+            if (isOrganizerMode)
+            {
+                CancelReview();
+            }
+            else
+            {
+                ClearFields();
+            }
+        }
+
+        private void CancelReview()
+        {
+            if (selectedReviewId == 0)
+            {
+                MessageBox.Show("Выберите рецензию для отмены.");
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Отменить выбранное рецензирование?",
+                "Подтверждение",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (result != DialogResult.Yes)
+                return;
+
+            try
+            {
+                string query = @"
+                    DELETE FROM dbo.tb_reviews
+                    WHERE id_review = @ReviewId;
+                ";
+
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@ReviewId", selectedReviewId)
+                };
+
+                Database.ExecuteNonQuery(query, parameters);
+
+                MessageBox.Show("Рецензирование отменено.");
+                LoadReports();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка отмены рецензирования: " + ex.Message);
+            }
         }
 
         private void btnClose_Click(object sender, EventArgs e)

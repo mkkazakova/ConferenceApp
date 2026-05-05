@@ -29,8 +29,10 @@ namespace ConferenceApp
             btnParticipants.Click += btnParticipants_Click;
             btnReports.Click += btnReports_Click;
             btnSections.Click += btnSections_Click;
+            btnReviews.Click += btnReviews_Click;
             btnProgram.Click += btnProgram_Click;
             btnMaterials.Click += btnMaterials_Click;
+            btnStatistics.Click += btnStatistics_Click;
         }
 
         private void ConfigureAccessByRole()
@@ -43,6 +45,7 @@ namespace ConferenceApp
             btnReviews.Visible = false;
             btnProgram.Visible = false;
             btnMaterials.Visible = false;
+            btnStatistics.Visible = false;
 
             btnReports.Text = "Доклады";
 
@@ -66,6 +69,7 @@ namespace ConferenceApp
                 btnReviews.Visible = true;
                 btnProgram.Visible = true;
                 btnMaterials.Visible = true;
+                btnStatistics.Visible = true;
             }
             else if (currentUserRole == "Администратор")
             {
@@ -75,6 +79,7 @@ namespace ConferenceApp
                 btnReviews.Visible = true;
                 btnProgram.Visible = true;
                 btnMaterials.Visible = true;
+                btnStatistics.Visible = true;
             }
         }
 
@@ -94,7 +99,7 @@ namespace ConferenceApp
         {
             if (currentUserRole == "Рецензент")
             {
-                ReviewsForm reviewsForm = new ReviewsForm(currentUserId);
+                ReviewsForm reviewsForm = new ReviewsForm(currentUserId, currentUserRole);
                 reviewsForm.ShowDialog();
             }
             else
@@ -102,6 +107,12 @@ namespace ConferenceApp
                 ReportsForm reportsForm = new ReportsForm(currentUserId, currentUserRole);
                 reportsForm.ShowDialog();
             }
+        }
+
+        private void btnReviews_Click(object sender, EventArgs e)
+        {
+            ReviewsForm reviewsForm = new ReviewsForm(currentUserId, currentUserRole);
+            reviewsForm.ShowDialog();
         }
 
         private void btnSections_Click(object sender, EventArgs e)
@@ -120,6 +131,12 @@ namespace ConferenceApp
         {
             MaterialsForm materialsForm = new MaterialsForm();
             materialsForm.ShowDialog();
+        }
+
+        private void btnStatistics_Click(object sender, EventArgs e)
+        {
+            StatisticsForm statisticsForm = new StatisticsForm();
+            statisticsForm.ShowDialog();
         }
 
         private void btnExit_Click(object sender, EventArgs e)
