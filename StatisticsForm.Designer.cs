@@ -5,7 +5,6 @@
         private System.ComponentModel.IContainer components = null;
 
         private System.Windows.Forms.Label lblTitle;
-
         private System.Windows.Forms.Panel summaryPanel;
 
         private System.Windows.Forms.Label lblParticipantsTitle;
@@ -33,6 +32,7 @@
 
         private System.Windows.Forms.Label lblTableTitle;
         private System.Windows.Forms.DataGridView dgvStatistics;
+        private System.Windows.Forms.Button btnExportReport;
         private System.Windows.Forms.Button btnClose;
 
         protected override void Dispose(bool disposing)
@@ -48,7 +48,6 @@
         private void InitializeComponent()
         {
             this.lblTitle = new System.Windows.Forms.Label();
-
             this.summaryPanel = new System.Windows.Forms.Panel();
 
             this.lblParticipantsTitle = new System.Windows.Forms.Label();
@@ -76,6 +75,7 @@
 
             this.lblTableTitle = new System.Windows.Forms.Label();
             this.dgvStatistics = new System.Windows.Forms.DataGridView();
+            this.btnExportReport = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
 
             this.summaryPanel.SuspendLayout();
@@ -344,6 +344,19 @@
             this.dgvStatistics.TabIndex = 4;
             this.dgvStatistics.TabStop = false;
 
+            // btnExportReport
+            this.btnExportReport.BackColor = System.Drawing.Color.FromArgb(194, 224, 255);
+            this.btnExportReport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnExportReport.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold);
+            this.btnExportReport.Location = new System.Drawing.Point(310, 690);
+            this.btnExportReport.Name = "btnExportReport";
+            this.btnExportReport.Size = new System.Drawing.Size(200, 39);
+            this.btnExportReport.TabIndex = 5;
+            this.btnExportReport.TabStop = false;
+            this.btnExportReport.Text = "Сформировать отчет";
+            this.btnExportReport.UseVisualStyleBackColor = false;
+            this.btnExportReport.Click += new System.EventHandler(this.btnExportReport_Click);
+
             // btnClose
             this.btnClose.BackColor = System.Drawing.Color.FromArgb(230, 230, 230);
             this.btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -351,7 +364,7 @@
             this.btnClose.Location = new System.Drawing.Point(735, 690);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(120, 39);
-            this.btnClose.TabIndex = 5;
+            this.btnClose.TabIndex = 6;
             this.btnClose.TabStop = false;
             this.btnClose.Text = "Закрыть";
             this.btnClose.UseVisualStyleBackColor = false;
@@ -367,6 +380,7 @@
             this.Controls.Add(this.buttonsPanel);
             this.Controls.Add(this.lblTableTitle);
             this.Controls.Add(this.dgvStatistics);
+            this.Controls.Add(this.btnExportReport);
             this.Controls.Add(this.btnClose);
             this.Name = "StatisticsForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

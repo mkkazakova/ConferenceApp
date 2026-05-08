@@ -2,6 +2,8 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
+using System.Text;
 using System.Windows.Forms;
 
 namespace ConferenceApp
@@ -224,6 +226,112 @@ namespace ConferenceApp
             }
 
             dgvStatistics.ClearSelection();
+        }
+
+        private void btnExportReport_Click(object sender, EventArgs e)
+        {
+            if (dgvStatistics.DataSource == null || dgvStatistics.Rows.Count == 0)
+            {
+                MessageBox.Show("Нет данных для формирования отчета.");
+                return;
+            }
+
+            using (SaveFileDialog dialog = new SaveFileDialog())
+            {
+                dialog.Title = "Сохранение отчета";
+                dialog.Filter = "Текстовый отчет (*.txt)|*.txt|CSV файл (*.csv)|*.csv";
+                dialog.FileName = "Отчет_конференции_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".txt";
+
+                if (dialog.ShowDialog() != DialogResult.OK)
+                    return;
+
+                try
+                {
+                    if (Path.GetExtension(dialog.FileName).ToLower() == ".csv")
+                        ExportToCsv(dialog.FileName);
+                    else
+                        ExportToTxt(dialog.FileName);
+
+                    MessageBox.Show("Отчет успешно сформирован.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ошибка формирования отчета: " + ex.Message);
+                }
+            }
+        }
+
+        private void ExportToTxt(string filePath)
+        {
+            using (StreamWriter writer = new StreamWriter(filePath, false, new UTF8Encoding(true)))
+            {
+                writer.WriteLine("ОТЧЕТ ПО ИНФОРМАЦИОННОЙ СИСТЕМЕ «НАУЧНАЯ КОНФЕРЕНЦИЯ»");
+                writer.WriteLine("Дата формирования: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm"));
+                writer.WriteLine();
+
+                writer.WriteLine("Общая статистика:");
+                writer.WriteLine("Участники: " + lblParticipantsValue.Text);
+                writer.WriteLine("Доклады: " + lblReportsValue.Text);
+                writer.WriteLine("Секции: " + lblSectionsValue.Text);
+                writer.WriteLine("Рецензии: " + lblReviewsValue.Text);
+                writer.WriteLine("Программа: " + lblProgramValue.Text);
+                writer.WriteLine("Записи на секции: " + lblVisitsValue.Text);
+                writer.WriteLine();
+
+                writer.WriteLine(lblTableTitle.Text);
+                writer.WriteLine(new string('-', 80));
+
+                foreach (DataGridViewColumn column in dgvStatistics.Columns)
+                    writer.Write(column.HeaderText + "\t");
+
+                writer.WriteLine();
+
+                foreach (DataGridViewRow row in dgvStatistics.Rows)
+                {
+                    if (row.IsNewRow)
+                        continue;
+
+                    foreach (DataGridViewCell cell in row.Cells)
+                        writer.Write(Convert.ToString(cell.Value) + "\t");
+
+                    writer.WriteLine();
+                }
+            }
+        }
+
+        private void ExportToCsv(string filePath)
+        {
+            using (StreamWriter writer = new StreamWriter(filePath, false, new UTF8Encoding(true)))
+            {
+                foreach (DataGridViewColumn column in dgvStatistics.Columns)
+                    writer.Write(EscapeCsv(column.HeaderText) + ";");
+
+                writer.WriteLine();
+
+                foreach (DataGridViewRow row in dgvStatistics.Rows)
+                {
+                    if (row.IsNewRow)
+                        continue;
+
+                    foreach (DataGridViewCell cell in row.Cells)
+                        writer.Write(EscapeCsv(Convert.ToString(cell.Value)) + ";");
+
+                    writer.WriteLine();
+                }
+            }
+        }
+
+        private string EscapeCsv(string value)
+        {
+            if (value == null)
+                return "";
+
+            value = value.Replace("\"", "\"\"");
+
+            if (value.Contains(";") || value.Contains("\"") || value.Contains("\n"))
+                return "\"" + value + "\"";
+
+            return value;
         }
 
         private void btnParticipantsByRole_Click(object sender, EventArgs e)
