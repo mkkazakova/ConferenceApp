@@ -10,13 +10,30 @@ namespace ConferenceApp
 {
     public partial class StatisticsForm : Form
     {
-        public StatisticsForm()
+        private string currentUserRole;
+
+        public StatisticsForm(string userRole)
         {
             InitializeComponent();
+
+            currentUserRole = userRole;
+
+            if (!HasAccess())
+            {
+                MessageBox.Show("Недостаточно прав доступа.");
+                Close();
+                return;
+            }
 
             SetupGridStyle();
             LoadSummary();
             LoadParticipantsByRole();
+        }
+
+        private bool HasAccess()
+        {
+            return currentUserRole == "Организатор"
+                || currentUserRole == "Администратор";
         }
 
         private void SetupGridStyle()
@@ -53,17 +70,7 @@ namespace ConferenceApp
         {
             try
             {
-                string query = @"
-                    SELECT
-                        (SELECT COUNT(*) FROM dbo.tb_participants) AS participants_count,
-                        (SELECT COUNT(*) FROM dbo.tb_reports) AS reports_count,
-                        (SELECT COUNT(*) FROM dbo.tb_sections) AS sections_count,
-                        (SELECT COUNT(*) FROM dbo.tb_reviews) AS reviews_count,
-                        (SELECT COUNT(*) FROM dbo.tb_conference_program) AS program_count,
-                        (SELECT COUNT(*) FROM dbo.tb_section_visits) AS visits_count;
-                ";
-
-                DataTable table = Database.ExecuteSelect(query, new SqlParameter[0]);
+                DataTable table = GetSummaryTable();
 
                 if (table.Rows.Count == 0)
                     return;
@@ -83,22 +90,27 @@ namespace ConferenceApp
             }
         }
 
+        private DataTable GetSummaryTable()
+        {
+            string query = @"
+                SELECT
+                    (SELECT COUNT(*) FROM dbo.tb_participants) AS participants_count,
+                    (SELECT COUNT(*) FROM dbo.tb_reports) AS reports_count,
+                    (SELECT COUNT(*) FROM dbo.tb_sections) AS sections_count,
+                    (SELECT COUNT(*) FROM dbo.tb_reviews) AS reviews_count,
+                    (SELECT COUNT(*) FROM dbo.tb_conference_program) AS program_count,
+                    (SELECT COUNT(*) FROM dbo.tb_section_visits) AS visits_count;
+            ";
+
+            return Database.ExecuteSelect(query, new SqlParameter[0]);
+        }
+
         private void LoadParticipantsByRole()
         {
             try
             {
                 lblTableTitle.Text = "Количество участников по ролям";
-
-                string query = @"
-                    SELECT
-                        user_role AS [Роль],
-                        COUNT(*) AS [Количество]
-                    FROM dbo.tb_participants
-                    GROUP BY user_role
-                    ORDER BY COUNT(*) DESC;
-                ";
-
-                LoadTable(query);
+                LoadTable(GetParticipantsByRoleQuery());
             }
             catch (Exception ex)
             {
@@ -111,17 +123,7 @@ namespace ConferenceApp
             try
             {
                 lblTableTitle.Text = "Количество докладов по статусам";
-
-                string query = @"
-                    SELECT
-                        review_status AS [Статус],
-                        COUNT(*) AS [Количество]
-                    FROM dbo.tb_reports
-                    GROUP BY review_status
-                    ORDER BY COUNT(*) DESC;
-                ";
-
-                LoadTable(query);
+                LoadTable(GetReportsByStatusQuery());
             }
             catch (Exception ex)
             {
@@ -134,19 +136,7 @@ namespace ConferenceApp
             try
             {
                 lblTableTitle.Text = "Популярность секций";
-
-                string query = @"
-                    SELECT
-                        s.section_name AS [Секция],
-                        COUNT(sv.id_visit) AS [Количество записей]
-                    FROM dbo.tb_sections AS s
-                    LEFT JOIN dbo.tb_section_visits AS sv
-                        ON s.id_section = sv.id_section
-                    GROUP BY s.section_name
-                    ORDER BY COUNT(sv.id_visit) DESC, s.section_name;
-                ";
-
-                LoadTable(query);
+                LoadTable(GetSectionPopularityQuery());
             }
             catch (Exception ex)
             {
@@ -159,23 +149,7 @@ namespace ConferenceApp
             try
             {
                 lblTableTitle.Text = "Количество рецензий по рецензентам";
-
-                string query = @"
-                    SELECT
-                        p.last_name + N' ' + p.first_name + N' ' + ISNULL(p.middle_name, N'') AS [Рецензент],
-                        COUNT(rv.id_review) AS [Количество рецензий],
-                        CAST(AVG((rv.novelty_score + rv.relevance_score + rv.quality_score) / 3.0) AS DECIMAL(5,2)) AS [Средняя оценка]
-                    FROM dbo.tb_reviews AS rv
-                    INNER JOIN dbo.tb_participants AS p
-                        ON rv.id_reviewer = p.id_participant
-                    GROUP BY
-                        p.last_name,
-                        p.first_name,
-                        p.middle_name
-                    ORDER BY COUNT(rv.id_review) DESC;
-                ";
-
-                LoadTable(query);
+                LoadTable(GetReviewsByReviewerQuery());
             }
             catch (Exception ex)
             {
@@ -188,23 +162,7 @@ namespace ConferenceApp
             try
             {
                 lblTableTitle.Text = "Средние оценки докладов";
-
-                string query = @"
-                    SELECT
-                        r.topic AS [Доклад],
-                        COUNT(rv.id_review) AS [Количество рецензий],
-                        CAST(AVG(CAST(rv.novelty_score AS FLOAT)) AS DECIMAL(5,2)) AS [Новизна],
-                        CAST(AVG(CAST(rv.relevance_score AS FLOAT)) AS DECIMAL(5,2)) AS [Актуальность],
-                        CAST(AVG(CAST(rv.quality_score AS FLOAT)) AS DECIMAL(5,2)) AS [Качество],
-                        CAST(AVG((rv.novelty_score + rv.relevance_score + rv.quality_score) / 3.0) AS DECIMAL(5,2)) AS [Средняя оценка]
-                    FROM dbo.tb_reports AS r
-                    INNER JOIN dbo.tb_reviews AS rv
-                        ON r.id_report = rv.id_report
-                    GROUP BY r.topic
-                    ORDER BY [Средняя оценка] DESC;
-                ";
-
-                LoadTable(query);
+                LoadTable(GetAverageScoresByReportQuery());
             }
             catch (Exception ex)
             {
@@ -228,18 +186,92 @@ namespace ConferenceApp
             dgvStatistics.ClearSelection();
         }
 
+        private string GetParticipantsByRoleQuery()
+        {
+            return @"
+                SELECT
+                    user_role AS [Роль],
+                    COUNT(*) AS [Количество]
+                FROM dbo.tb_participants
+                GROUP BY user_role
+                ORDER BY COUNT(*) DESC;
+            ";
+        }
+
+        private string GetReportsByStatusQuery()
+        {
+            return @"
+                SELECT
+                    review_status AS [Статус],
+                    COUNT(*) AS [Количество]
+                FROM dbo.tb_reports
+                GROUP BY review_status
+                ORDER BY COUNT(*) DESC;
+            ";
+        }
+
+        private string GetSectionPopularityQuery()
+        {
+            return @"
+                SELECT
+                    s.section_name AS [Секция],
+                    COUNT(sv.id_visit) AS [Количество записей]
+                FROM dbo.tb_sections AS s
+                LEFT JOIN dbo.tb_section_visits AS sv
+                    ON s.id_section = sv.id_section
+                GROUP BY s.section_name
+                ORDER BY COUNT(sv.id_visit) DESC, s.section_name;
+            ";
+        }
+
+        private string GetReviewsByReviewerQuery()
+        {
+            return @"
+                SELECT
+                    p.last_name + N' ' + p.first_name + N' ' + ISNULL(p.middle_name, N'') AS [Рецензент],
+                    COUNT(rv.id_review) AS [Количество рецензий],
+                    CAST(AVG((rv.novelty_score + rv.relevance_score + rv.quality_score) / 3.0) AS DECIMAL(5,2)) AS [Средняя оценка]
+                FROM dbo.tb_reviews AS rv
+                INNER JOIN dbo.tb_participants AS p
+                    ON rv.id_reviewer = p.id_participant
+                GROUP BY
+                    p.last_name,
+                    p.first_name,
+                    p.middle_name
+                ORDER BY COUNT(rv.id_review) DESC;
+            ";
+        }
+
+        private string GetAverageScoresByReportQuery()
+        {
+            return @"
+                SELECT
+                    r.topic AS [Доклад],
+                    COUNT(rv.id_review) AS [Количество рецензий],
+                    CAST(AVG(CAST(rv.novelty_score AS FLOAT)) AS DECIMAL(5,2)) AS [Новизна],
+                    CAST(AVG(CAST(rv.relevance_score AS FLOAT)) AS DECIMAL(5,2)) AS [Актуальность],
+                    CAST(AVG(CAST(rv.quality_score AS FLOAT)) AS DECIMAL(5,2)) AS [Качество],
+                    CAST(AVG((rv.novelty_score + rv.relevance_score + rv.quality_score) / 3.0) AS DECIMAL(5,2)) AS [Средняя оценка]
+                FROM dbo.tb_reports AS r
+                INNER JOIN dbo.tb_reviews AS rv
+                    ON r.id_report = rv.id_report
+                GROUP BY r.topic
+                ORDER BY [Средняя оценка] DESC;
+            ";
+        }
+
         private void btnExportReport_Click(object sender, EventArgs e)
         {
-            if (dgvStatistics.DataSource == null || dgvStatistics.Rows.Count == 0)
+            if (!HasAccess())
             {
-                MessageBox.Show("Нет данных для формирования отчета.");
+                MessageBox.Show("Недостаточно прав доступа.");
                 return;
             }
 
             using (SaveFileDialog dialog = new SaveFileDialog())
             {
                 dialog.Title = "Сохранение отчета";
-                dialog.Filter = "Текстовый отчет (*.txt)|*.txt|CSV файл (*.csv)|*.csv";
+                dialog.Filter = "Текстовый отчет (*.txt)|*.txt|CSV файл текущей таблицы (*.csv)|*.csv";
                 dialog.FileName = "Отчет_конференции_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".txt";
 
                 if (dialog.ShowDialog() != DialogResult.OK)
@@ -269,42 +301,76 @@ namespace ConferenceApp
                 writer.WriteLine("Дата формирования: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm"));
                 writer.WriteLine();
 
-                writer.WriteLine("Общая статистика:");
-                writer.WriteLine("Участники: " + lblParticipantsValue.Text);
-                writer.WriteLine("Доклады: " + lblReportsValue.Text);
-                writer.WriteLine("Секции: " + lblSectionsValue.Text);
-                writer.WriteLine("Рецензии: " + lblReviewsValue.Text);
-                writer.WriteLine("Программа: " + lblProgramValue.Text);
-                writer.WriteLine("Записи на секции: " + lblVisitsValue.Text);
-                writer.WriteLine();
+                WriteSummary(writer);
 
-                writer.WriteLine(lblTableTitle.Text);
-                writer.WriteLine(new string('-', 80));
-
-                foreach (DataGridViewColumn column in dgvStatistics.Columns)
-                    writer.Write(column.HeaderText + "\t");
-
-                writer.WriteLine();
-
-                foreach (DataGridViewRow row in dgvStatistics.Rows)
-                {
-                    if (row.IsNewRow)
-                        continue;
-
-                    foreach (DataGridViewCell cell in row.Cells)
-                        writer.Write(Convert.ToString(cell.Value) + "\t");
-
-                    writer.WriteLine();
-                }
+                WriteTable(writer, "Количество участников по ролям", GetParticipantsByRoleQuery());
+                WriteTable(writer, "Количество докладов по статусам", GetReportsByStatusQuery());
+                WriteTable(writer, "Популярность секций", GetSectionPopularityQuery());
+                WriteTable(writer, "Количество рецензий по рецензентам", GetReviewsByReviewerQuery());
+                WriteTable(writer, "Средние оценки докладов", GetAverageScoresByReportQuery());
             }
+        }
+
+        private void WriteSummary(StreamWriter writer)
+        {
+            DataTable table = GetSummaryTable();
+
+            if (table.Rows.Count == 0)
+                return;
+
+            DataRow row = table.Rows[0];
+
+            writer.WriteLine("Общая статистика:");
+            writer.WriteLine("Участники: " + row["participants_count"]);
+            writer.WriteLine("Доклады: " + row["reports_count"]);
+            writer.WriteLine("Секции: " + row["sections_count"]);
+            writer.WriteLine("Рецензии: " + row["reviews_count"]);
+            writer.WriteLine("Программа: " + row["program_count"]);
+            writer.WriteLine("Записи на секции: " + row["visits_count"]);
+            writer.WriteLine();
+        }
+
+        private void WriteTable(StreamWriter writer, string title, string query)
+        {
+            DataTable table = Database.ExecuteSelect(query, new SqlParameter[0]);
+
+            writer.WriteLine(title);
+            writer.WriteLine(new string('-', 80));
+
+            foreach (DataColumn column in table.Columns)
+            {
+                writer.Write(column.ColumnName + "\t");
+            }
+
+            writer.WriteLine();
+
+            foreach (DataRow row in table.Rows)
+            {
+                foreach (DataColumn column in table.Columns)
+                {
+                    writer.Write(Convert.ToString(row[column]) + "\t");
+                }
+
+                writer.WriteLine();
+            }
+
+            writer.WriteLine();
         }
 
         private void ExportToCsv(string filePath)
         {
+            if (dgvStatistics.DataSource == null || dgvStatistics.Rows.Count == 0)
+            {
+                MessageBox.Show("Нет данных для экспорта текущей таблицы.");
+                return;
+            }
+
             using (StreamWriter writer = new StreamWriter(filePath, false, new UTF8Encoding(true)))
             {
                 foreach (DataGridViewColumn column in dgvStatistics.Columns)
+                {
                     writer.Write(EscapeCsv(column.HeaderText) + ";");
+                }
 
                 writer.WriteLine();
 
@@ -314,7 +380,9 @@ namespace ConferenceApp
                         continue;
 
                     foreach (DataGridViewCell cell in row.Cells)
+                    {
                         writer.Write(EscapeCsv(Convert.ToString(cell.Value)) + ";");
+                    }
 
                     writer.WriteLine();
                 }

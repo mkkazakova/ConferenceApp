@@ -48,6 +48,12 @@ namespace ConferenceApp
                 return;
             }
 
+            if (password.Length <= 4)
+            {
+                MessageBox.Show("Пароль должен содержать больше 4 символов.");
+                return;
+            }
+
             if (EmailExistsInDatabase(email))
             {
                 MessageBox.Show("Пользователь с таким email уже существует.");

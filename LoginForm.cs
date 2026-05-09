@@ -25,41 +25,64 @@ namespace ConferenceApp
                 return;
             }
 
-            string passwordHash = GetSha256Hash(password);
-
-            string query = @"
-                SELECT TOP 1
-                    id_participant,
-                    last_name + N' ' + first_name + N' ' + ISNULL(middle_name, N'') AS full_name,
-                    email,
-                    user_role
-                FROM dbo.tb_participants
-                WHERE email = @Email
-                  AND password_hash = @PasswordHash;
-            ";
-
-            SqlParameter[] parameters =
+            try
             {
-                new SqlParameter("@Email", email),
-                new SqlParameter("@PasswordHash", passwordHash)
-            };
+                string passwordHash = GetSha256Hash(password);
 
-            DataTable table = Database.ExecuteSelect(query, parameters);
+                string query = @"
+                    SELECT TOP 1
+                        id_participant,
+                        last_name + N' ' + first_name + N' ' + ISNULL(middle_name, N'') AS full_name,
+                        email,
+                        user_role
+                    FROM dbo.tb_participants
+                    WHERE email = @Email
+                      AND password_hash = @PasswordHash;
+                ";
 
-            if (table.Rows.Count == 0)
-            {
-                MessageBox.Show("Неверный email или пароль.");
-                return;
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@Email", email),
+                    new SqlParameter("@PasswordHash", passwordHash)
+                };
+
+                DataTable table = Database.ExecuteSelect(query, parameters);
+
+                if (table.Rows.Count == 0)
+                {
+                    MessageBox.Show("Неверный email или пароль.");
+                    txtPassword.Clear();
+                    txtPassword.Focus();
+                    return;
+                }
+
+                int userId = Convert.ToInt32(table.Rows[0]["id_participant"]);
+                string fullName = Convert.ToString(table.Rows[0]["full_name"]).Trim();
+                string role = Convert.ToString(table.Rows[0]["user_role"]).Trim();
+
+                if (!IsValidRole(role))
+                {
+                    MessageBox.Show("Для пользователя задана некорректная роль доступа.");
+                    return;
+                }
+
+                MainForm mainForm = new MainForm(userId, fullName, role, this);
+
+                mainForm.Show();
+                Hide();
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка входа в систему: " + ex.Message);
+            }
+        }
 
-            int userId = Convert.ToInt32(table.Rows[0]["id_participant"]);
-            string fullName = table.Rows[0]["full_name"].ToString();
-            string role = table.Rows[0]["user_role"].ToString();
-
-            MainForm mainForm = new MainForm(userId, fullName, role, this);
-
-            mainForm.Show();
-            this.Hide();
+        private bool IsValidRole(string role)
+        {
+            return role == "Участник"
+                || role == "Рецензент"
+                || role == "Организатор"
+                || role == "Администратор";
         }
 
         private void lnkRegister_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

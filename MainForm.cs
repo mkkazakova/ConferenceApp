@@ -33,6 +33,7 @@ namespace ConferenceApp
             btnProgram.Click += btnProgram_Click;
             btnMaterials.Click += btnMaterials_Click;
             btnStatistics.Click += btnStatistics_Click;
+            btnExit.Click += btnExit_Click;
         }
 
         private void ConfigureAccessByRole()
@@ -81,6 +82,25 @@ namespace ConferenceApp
                 btnMaterials.Visible = true;
                 btnStatistics.Visible = true;
             }
+            else
+            {
+                MessageBox.Show("Некорректная роль пользователя.");
+                returnToLogin = true;
+                loginForm.Show();
+                Close();
+            }
+        }
+
+        private bool HasAccess(params string[] allowedRoles)
+        {
+            foreach (string role in allowedRoles)
+            {
+                if (currentUserRole == role)
+                    return true;
+            }
+
+            MessageBox.Show("Недостаточно прав доступа.");
+            return false;
         }
 
         private void btnProfile_Click(object sender, EventArgs e)
@@ -91,12 +111,18 @@ namespace ConferenceApp
 
         private void btnParticipants_Click(object sender, EventArgs e)
         {
+            if (!HasAccess("Организатор", "Администратор"))
+                return;
+
             ParticipantsForm participantsForm = new ParticipantsForm(currentUserRole);
             participantsForm.ShowDialog();
         }
 
         private void btnReports_Click(object sender, EventArgs e)
         {
+            if (!HasAccess("Участник", "Рецензент", "Организатор", "Администратор"))
+                return;
+
             if (currentUserRole == "Рецензент")
             {
                 ReviewsForm reviewsForm = new ReviewsForm(currentUserId, currentUserRole);
@@ -111,31 +137,46 @@ namespace ConferenceApp
 
         private void btnReviews_Click(object sender, EventArgs e)
         {
+            if (!HasAccess("Организатор", "Администратор"))
+                return;
+
             ReviewsForm reviewsForm = new ReviewsForm(currentUserId, currentUserRole);
             reviewsForm.ShowDialog();
         }
 
         private void btnSections_Click(object sender, EventArgs e)
         {
+            if (!HasAccess("Участник", "Организатор", "Администратор"))
+                return;
+
             SectionsForm sectionsForm = new SectionsForm(currentUserId, currentUserRole);
             sectionsForm.ShowDialog();
         }
 
         private void btnProgram_Click(object sender, EventArgs e)
         {
+            if (!HasAccess("Участник", "Организатор", "Администратор"))
+                return;
+
             ProgramForm programForm = new ProgramForm(currentUserId, currentUserRole);
             programForm.ShowDialog();
         }
 
         private void btnMaterials_Click(object sender, EventArgs e)
         {
+            if (!HasAccess("Участник", "Организатор", "Администратор"))
+                return;
+
             MaterialsForm materialsForm = new MaterialsForm();
             materialsForm.ShowDialog();
         }
 
         private void btnStatistics_Click(object sender, EventArgs e)
         {
-            StatisticsForm statisticsForm = new StatisticsForm();
+            if (!HasAccess("Организатор", "Администратор"))
+                return;
+
+            StatisticsForm statisticsForm = new StatisticsForm(currentUserRole);
             statisticsForm.ShowDialog();
         }
 
