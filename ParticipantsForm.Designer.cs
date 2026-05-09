@@ -120,7 +120,7 @@
             this.lblTitle.AutoSize = true;
             this.lblTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Bold);
             this.lblTitle.ForeColor = System.Drawing.Color.FromArgb(32, 58, 95);
-            this.lblTitle.Location = new System.Drawing.Point(385, 20);
+            this.lblTitle.Location = new System.Drawing.Point(430, 20);
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(360, 31);
             this.lblTitle.Text = "Участники и рецензенты";
@@ -166,32 +166,32 @@
             this.tabRequests.Text = "Заявки рецензентов";
 
             // lblSearch
-            this.lblSearch.Location = new System.Drawing.Point(15, 20);
+            this.lblSearch.Location = new System.Drawing.Point(25, 20);
             this.lblSearch.Name = "lblSearch";
-            this.lblSearch.Size = new System.Drawing.Size(70, 20);
+            this.lblSearch.Size = new System.Drawing.Size(65, 20);
             this.lblSearch.Text = "Поиск:";
 
             // txtSearch
-            this.txtSearch.Location = new System.Drawing.Point(75, 17);
+            this.txtSearch.Location = new System.Drawing.Point(95, 17);
             this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(250, 22);
+            this.txtSearch.Size = new System.Drawing.Size(170, 22);
             this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
 
             // lblRoleFilter
-            this.lblRoleFilter.Location = new System.Drawing.Point(350, 20);
+            this.lblRoleFilter.Location = new System.Drawing.Point(290, 20);
             this.lblRoleFilter.Name = "lblRoleFilter";
             this.lblRoleFilter.Size = new System.Drawing.Size(50, 20);
             this.lblRoleFilter.Text = "Роль:";
 
             // cmbRoleFilter
             this.cmbRoleFilter.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbRoleFilter.Location = new System.Drawing.Point(405, 17);
+            this.cmbRoleFilter.Location = new System.Drawing.Point(345, 17);
             this.cmbRoleFilter.Name = "cmbRoleFilter";
-            this.cmbRoleFilter.Size = new System.Drawing.Size(140, 24);
+            this.cmbRoleFilter.Size = new System.Drawing.Size(135, 24);
             this.cmbRoleFilter.SelectedIndexChanged += new System.EventHandler(this.cmbRoleFilter_SelectedIndexChanged);
 
             // lblStatusFilter
-            this.lblStatusFilter.Location = new System.Drawing.Point(570, 20);
+            this.lblStatusFilter.Location = new System.Drawing.Point(505, 20);
             this.lblStatusFilter.Name = "lblStatusFilter";
             this.lblStatusFilter.Size = new System.Drawing.Size(65, 20);
             this.lblStatusFilter.Text = "Статус:";
@@ -204,36 +204,36 @@
                 "Слушатель",
                 "Докладчик"
             });
-            this.cmbStatusFilter.Location = new System.Drawing.Point(640, 17);
+            this.cmbStatusFilter.Location = new System.Drawing.Point(575, 17);
             this.cmbStatusFilter.Name = "cmbStatusFilter";
-            this.cmbStatusFilter.Size = new System.Drawing.Size(140, 24);
+            this.cmbStatusFilter.Size = new System.Drawing.Size(135, 24);
             this.cmbStatusFilter.SelectedIndexChanged += new System.EventHandler(this.cmbStatusFilter_SelectedIndexChanged);
 
             // btnAddParticipant
-            this.btnAddParticipant.Location = new System.Drawing.Point(800, 14);
+            this.btnAddParticipant.Location = new System.Drawing.Point(735, 14);
             this.btnAddParticipant.Name = "btnAddParticipant";
             this.btnAddParticipant.Size = new System.Drawing.Size(95, 30);
             this.btnAddParticipant.Text = "Добавить";
             this.btnAddParticipant.Click += new System.EventHandler(this.btnAddParticipant_Click);
 
             // btnEditParticipant
-            this.btnEditParticipant.Location = new System.Drawing.Point(900, 14);
+            this.btnEditParticipant.Location = new System.Drawing.Point(840, 14);
             this.btnEditParticipant.Name = "btnEditParticipant";
-            this.btnEditParticipant.Size = new System.Drawing.Size(110, 30);
+            this.btnEditParticipant.Size = new System.Drawing.Size(125, 30);
             this.btnEditParticipant.Text = "Редактировать";
             this.btnEditParticipant.Click += new System.EventHandler(this.btnEditParticipant_Click);
 
             // btnChangePassword
-            this.btnChangePassword.Location = new System.Drawing.Point(1015, 14);
+            this.btnChangePassword.Location = new System.Drawing.Point(975, 14);
             this.btnChangePassword.Name = "btnChangePassword";
-            this.btnChangePassword.Size = new System.Drawing.Size(110, 30);
+            this.btnChangePassword.Size = new System.Drawing.Size(85, 30);
             this.btnChangePassword.Text = "Пароль";
             this.btnChangePassword.Click += new System.EventHandler(this.btnChangePassword_Click);
 
             // btnDeleteParticipant
-            this.btnDeleteParticipant.Location = new System.Drawing.Point(1030, 52);
+            this.btnDeleteParticipant.Location = new System.Drawing.Point(1070, 14);
             this.btnDeleteParticipant.Name = "btnDeleteParticipant";
-            this.btnDeleteParticipant.Size = new System.Drawing.Size(130, 30);
+            this.btnDeleteParticipant.Size = new System.Drawing.Size(90, 30);
             this.btnDeleteParticipant.Text = "Удалить";
             this.btnDeleteParticipant.Click += new System.EventHandler(this.btnDeleteParticipant_Click);
 
@@ -247,13 +247,13 @@
             this.dgvParticipants.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.SystemColors.ControlText;
             this.dgvParticipants.ColumnHeadersDefaultCellStyle.SelectionBackColor = System.Drawing.SystemColors.Control;
             this.dgvParticipants.ColumnHeadersDefaultCellStyle.SelectionForeColor = System.Drawing.SystemColors.ControlText;
-            this.dgvParticipants.Location = new System.Drawing.Point(15, 90);
+            this.dgvParticipants.Location = new System.Drawing.Point(15, 70);
             this.dgvParticipants.MultiSelect = false;
             this.dgvParticipants.Name = "dgvParticipants";
             this.dgvParticipants.ReadOnly = true;
             this.dgvParticipants.RowHeadersVisible = false;
             this.dgvParticipants.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvParticipants.Size = new System.Drawing.Size(1145, 230);
+            this.dgvParticipants.Size = new System.Drawing.Size(1145, 250);
             this.dgvParticipants.SelectionChanged += new System.EventHandler(this.dgvParticipants_SelectionChanged);
 
             // gbDetails

@@ -26,6 +26,7 @@ namespace ConferenceApp
             InitializeComponent();
             AppTheme.ApplyFormStyle(this);
             ConfigureFormByRole();
+            MoveTitleToCenter();
 
             cmbRoleFilter.SelectedIndex = 0;
             cmbStatusFilter.SelectedIndex = 0;
@@ -37,6 +38,11 @@ namespace ConferenceApp
         private bool IsAdmin()
         {
             return currentUserRole == "Администратор";
+        }
+
+        private void MoveTitleToCenter()
+        {
+            lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2 + 25;
         }
 
         private void ConfigureFormByRole()
@@ -61,6 +67,7 @@ namespace ConferenceApp
                 btnAddParticipant.Visible = true;
                 btnEditParticipant.Visible = true;
                 btnChangePassword.Visible = true;
+                btnDeleteParticipant.Visible = true;
             }
             else
             {
@@ -78,7 +85,10 @@ namespace ConferenceApp
                 btnAddParticipant.Visible = false;
                 btnEditParticipant.Visible = false;
                 btnChangePassword.Visible = false;
+                btnDeleteParticipant.Visible = false;
             }
+
+            MoveTitleToCenter();
         }
 
         private void LoadParticipants()
@@ -550,6 +560,12 @@ namespace ConferenceApp
 
         private void btnDeleteParticipant_Click(object sender, EventArgs e)
         {
+            if (!IsAdmin())
+            {
+                MessageBox.Show("Удаление пользователей доступно только администратору.");
+                return;
+            }
+
             if (dgvParticipants.CurrentRow == null)
             {
                 MessageBox.Show("Выберите пользователя.");
@@ -990,15 +1006,15 @@ namespace ConferenceApp
                 cmbAcademicDegree.DropDownStyle = ComboBoxStyle.DropDown;
                 cmbAcademicDegree.Items.AddRange(new object[]
                 {
-                "Нет",
-                "бакалавр",
-                "магистр",
-                "аспирант",
-                "к.т.н.",
-                "к.ф.-м.н.",
-                "д.т.н.",
-                "д.ф.-м.н."
-            });
+                    "Нет",
+                    "бакалавр",
+                    "магистр",
+                    "аспирант",
+                    "к.т.н.",
+                    "к.ф.-м.н.",
+                    "д.т.н.",
+                    "д.ф.-м.н."
+                });
 
                 Label lblPassword = AddLabel("Пароль:", 20, 340);
                 lblPassword.Name = "lblPassword";

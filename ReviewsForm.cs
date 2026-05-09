@@ -50,7 +50,7 @@ namespace ConferenceApp
 
                 btnSave.Visible = true;
                 btnSave.Text = "Сохранить изменения";
-                btnClear.Text = "Отменить рецензирование";
+                btnClear.Text = "Отменить";
 
                 txtTopic.ReadOnly = false;
                 txtAnnotation.ReadOnly = false;

@@ -26,6 +26,7 @@ namespace ConferenceApp
         public static readonly Font TitleFont = new Font("Segoe UI", 14F, FontStyle.Bold);
         public static readonly Font ButtonFont = new Font("Segoe UI", 10F, FontStyle.Bold);
         public static readonly Font HeaderFont = new Font("Segoe UI", 10F, FontStyle.Bold);
+        public static readonly Font SectionTitleFont = new Font("Segoe UI", 12F, FontStyle.Bold);
 
         public static void ApplyFormStyle(Form form)
         {
@@ -205,6 +206,13 @@ namespace ConferenceApp
             }
         }
 
+        public static void ApplySectionTitleStyle(Label label)
+        {
+            label.ForeColor = Dark;
+            label.Font = SectionTitleFont;
+            label.TextAlign = ContentAlignment.MiddleLeft;
+        }
+
         public static void ApplyCardTitleLabelStyle(Label label)
         {
             label.ForeColor = CardTitleText;
@@ -251,7 +259,8 @@ namespace ConferenceApp
 
         public static void ApplyFlowLayoutPanelStyle(FlowLayoutPanel panel)
         {
-            panel.BackColor = Light;
+            panel.BackColor = Background;
+            panel.ForeColor = Dark;
         }
 
         public static void ApplyTabControlStyle(TabControl tabControl)

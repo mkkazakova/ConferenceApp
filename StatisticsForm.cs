@@ -16,6 +16,7 @@ namespace ConferenceApp
         {
             InitializeComponent();
             AppTheme.ApplyFormStyle(this);
+            AppTheme.ApplySectionTitleStyle(lblTableTitle);
 
             currentUserRole = userRole;
 
