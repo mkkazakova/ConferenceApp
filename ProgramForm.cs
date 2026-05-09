@@ -87,8 +87,8 @@ namespace ConferenceApp
                     Label emptyLabel = new Label();
                     emptyLabel.Text = "Программа конференции пока не сформирована.";
                     emptyLabel.AutoSize = true;
-                    emptyLabel.Font = new Font("Microsoft Sans Serif", 11F);
-                    emptyLabel.ForeColor = Color.FromArgb(32, 58, 95);
+                    emptyLabel.Font = AppTheme.DefaultFont;
+                    emptyLabel.ForeColor = AppTheme.CardSecondaryText;
                     emptyLabel.Margin = new Padding(10);
 
                     flowProgram.Controls.Add(emptyLabel);
@@ -123,8 +123,8 @@ namespace ConferenceApp
             lblDate.AutoSize = false;
             lblDate.Width = flowProgram.ClientSize.Width - 30;
             lblDate.Height = 30;
-            lblDate.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Bold);
-            lblDate.ForeColor = Color.FromArgb(32, 58, 95);
+            lblDate.Font = AppTheme.TitleFont;
+            lblDate.ForeColor = AppTheme.CardTitleText;
             lblDate.Margin = new Padding(5, 10, 5, 5);
 
             flowProgram.Controls.Add(lblDate);
@@ -163,42 +163,39 @@ namespace ConferenceApp
             Panel card = new Panel();
             card.Width = flowProgram.ClientSize.Width - 35;
             card.Height = 105;
-            card.BackColor = Color.White;
-            card.BorderStyle = BorderStyle.FixedSingle;
             card.Margin = new Padding(5, 3, 5, 10);
             card.Cursor = Cursors.Hand;
             card.Tag = data;
+
+            AppTheme.ApplyCardStyle(card);
 
             Label lblTime = new Label();
             lblTime.Text = time;
             lblTime.Location = new Point(15, 15);
             lblTime.Size = new Size(70, 25);
-            lblTime.Font = new Font("Microsoft Sans Serif", 13F, FontStyle.Bold);
-            lblTime.ForeColor = Color.FromArgb(32, 58, 95);
+            lblTime.Font = AppTheme.TitleFont;
+            lblTime.ForeColor = AppTheme.CardTitleText;
 
             Label lblSection = new Label();
             lblSection.Text = section;
             lblSection.Location = new Point(100, 12);
             lblSection.Size = new Size(760, 24);
-            lblSection.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Bold);
-            lblSection.ForeColor = Color.FromArgb(32, 58, 95);
             lblSection.AutoEllipsis = true;
+            AppTheme.ApplyCardTitleLabelStyle(lblSection);
 
             Label lblTopic = new Label();
             lblTopic.Text = topic;
             lblTopic.Location = new Point(100, 40);
             lblTopic.Size = new Size(760, 22);
-            lblTopic.Font = new Font("Microsoft Sans Serif", 9F);
-            lblTopic.ForeColor = Color.Black;
             lblTopic.AutoEllipsis = true;
+            AppTheme.ApplyCardMainLabelStyle(lblTopic);
 
             Label lblInfo = new Label();
             lblInfo.Text = "Автор: " + author + "    Место: " + location;
             lblInfo.Location = new Point(100, 68);
             lblInfo.Size = new Size(760, 22);
-            lblInfo.Font = new Font("Microsoft Sans Serif", 9F);
-            lblInfo.ForeColor = Color.DimGray;
             lblInfo.AutoEllipsis = true;
+            AppTheme.ApplyCardSecondaryLabelStyle(lblInfo);
 
             card.Controls.Add(lblTime);
             card.Controls.Add(lblSection);
@@ -228,6 +225,9 @@ namespace ConferenceApp
 
             ProgramCardData data = card.Tag as ProgramCardData;
 
+            if (data == null)
+                return;
+
             selectedPresentationId = data.PresentationId;
             selectedReportId = data.ReportId;
             selectedCardData = data;
@@ -235,10 +235,12 @@ namespace ConferenceApp
             foreach (Control control in flowProgram.Controls)
             {
                 if (control is Panel panel)
-                    panel.BackColor = Color.White;
+                {
+                    AppTheme.ApplyCardStyle(panel);
+                }
             }
 
-            card.BackColor = Color.FromArgb(210, 230, 250);
+            AppTheme.ApplySelectedCardStyle(card);
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
@@ -491,6 +493,8 @@ namespace ConferenceApp
                     dtpDate.Value = DateTime.Today;
                     cmbTime.SelectedItem = "10:00";
                 }
+
+                AppTheme.ApplyFormStyle(this);
             }
 
             private void InitializeDialog()
@@ -501,7 +505,9 @@ namespace ConferenceApp
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 MaximizeBox = false;
                 MinimizeBox = false;
-                BackColor = Color.FromArgb(240, 247, 255);
+                BackColor = AppTheme.Background;
+                Font = AppTheme.DefaultFont;
+                ForeColor = AppTheme.Dark;
 
                 AddLabel("Доклад:", 25, 35);
 
@@ -514,9 +520,8 @@ namespace ConferenceApp
                 lblReportText = new Label();
                 lblReportText.Location = new Point(115, 32);
                 lblReportText.Size = new Size(400, 45);
-                lblReportText.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
-                lblReportText.ForeColor = Color.FromArgb(32, 58, 95);
                 lblReportText.AutoEllipsis = true;
+                AppTheme.ApplyCardTitleLabelStyle(lblReportText);
                 Controls.Add(lblReportText);
 
                 AddLabel("Секция:", 25, 85);
@@ -625,8 +630,8 @@ namespace ConferenceApp
                 label.Text = text;
                 label.Location = new Point(x, y);
                 label.Size = new Size(85, 22);
-                label.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
-                label.ForeColor = Color.FromArgb(32, 58, 95);
+                label.Font = AppTheme.HeaderFont;
+                label.ForeColor = AppTheme.CardTitleText;
                 Controls.Add(label);
 
                 return label;

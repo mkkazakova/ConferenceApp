@@ -66,8 +66,8 @@ namespace ConferenceApp
                     Label emptyLabel = new Label();
                     emptyLabel.Text = "Материалы не найдены.";
                     emptyLabel.AutoSize = true;
-                    emptyLabel.Font = new Font("Microsoft Sans Serif", 11F);
-                    emptyLabel.ForeColor = Color.FromArgb(32, 58, 95);
+                    emptyLabel.Font = AppTheme.DefaultFont;
+                    emptyLabel.ForeColor = AppTheme.CardSecondaryText;
                     emptyLabel.Margin = new Padding(10);
 
                     flowMaterials.Controls.Add(emptyLabel);
@@ -104,49 +104,44 @@ namespace ConferenceApp
             Panel card = new Panel();
             card.Width = flowMaterials.ClientSize.Width - 35;
             card.Height = 145;
-            card.BackColor = Color.White;
-            card.BorderStyle = BorderStyle.FixedSingle;
             card.Margin = new Padding(5, 3, 5, 10);
+
+            AppTheme.ApplyCardStyle(card);
 
             Label lblTopic = new Label();
             lblTopic.Text = topic;
             lblTopic.Location = new Point(15, 12);
             lblTopic.Size = new Size(760, 25);
-            lblTopic.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Bold);
-            lblTopic.ForeColor = Color.FromArgb(32, 58, 95);
             lblTopic.AutoEllipsis = true;
+            AppTheme.ApplyCardTitleLabelStyle(lblTopic);
 
             Label lblAuthor = new Label();
             lblAuthor.Text = "Автор: " + author + (workplace == "" ? "" : "    " + workplace);
             lblAuthor.Location = new Point(15, 40);
             lblAuthor.Size = new Size(760, 22);
-            lblAuthor.Font = new Font("Microsoft Sans Serif", 9F);
-            lblAuthor.ForeColor = Color.DimGray;
             lblAuthor.AutoEllipsis = true;
+            AppTheme.ApplyCardSecondaryLabelStyle(lblAuthor);
 
             Label lblAnnotation = new Label();
             lblAnnotation.Text = "Аннотация: " + annotation;
             lblAnnotation.Location = new Point(15, 65);
             lblAnnotation.Size = new Size(760, 22);
-            lblAnnotation.Font = new Font("Microsoft Sans Serif", 9F);
-            lblAnnotation.ForeColor = Color.Black;
             lblAnnotation.AutoEllipsis = true;
+            AppTheme.ApplyCardMainLabelStyle(lblAnnotation);
 
             Label lblKeywords = new Label();
             lblKeywords.Text = "Ключевые слова: " + keywords;
             lblKeywords.Location = new Point(15, 90);
             lblKeywords.Size = new Size(620, 22);
-            lblKeywords.Font = new Font("Microsoft Sans Serif", 9F);
-            lblKeywords.ForeColor = Color.Black;
             lblKeywords.AutoEllipsis = true;
+            AppTheme.ApplyCardMainLabelStyle(lblKeywords);
 
             Label lblFile = new Label();
             lblFile.Text = fileName == "" ? "Файл: не указан" : "Файл: " + fileName;
             lblFile.Location = new Point(15, 115);
             lblFile.Size = new Size(620, 22);
-            lblFile.Font = new Font("Microsoft Sans Serif", 9F);
-            lblFile.ForeColor = Color.DimGray;
             lblFile.AutoEllipsis = true;
+            AppTheme.ApplyCardSecondaryLabelStyle(lblFile);
 
             Button btnOpen = new Button();
             btnOpen.Text = "Открыть файл";
@@ -154,8 +149,9 @@ namespace ConferenceApp
             btnOpen.Location = new Point(card.Width - 160, 105);
             btnOpen.Tag = reportId;
             btnOpen.Enabled = fileName != "";
-            btnOpen.UseVisualStyleBackColor = true;
             btnOpen.Click += btnOpenFile_Click;
+
+            AppTheme.ApplyButtonStyle(btnOpen);
 
             card.Controls.Add(lblTopic);
             card.Controls.Add(lblAuthor);
@@ -294,7 +290,7 @@ namespace ConferenceApp
 
         private void CenterTitle()
         {
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
+            lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
         }
 
         private void btnClose_Click(object sender, EventArgs e)

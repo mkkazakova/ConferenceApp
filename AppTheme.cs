@@ -13,6 +13,15 @@ namespace ConferenceApp
         public static readonly Color White = Color.White;
         public static readonly Color Border = ColorTranslator.FromHtml("#D8C7E3");
 
+        public static readonly Color CardBack = White;
+        public static readonly Color CardSelectedBack = Light;
+        public static readonly Color CardBorder = Border;
+        public static readonly Color CardTitleText = Dark;
+        public static readonly Color CardMainText = Dark;
+        public static readonly Color CardSecondaryText = Primary;
+
+        public static readonly Color TableAlternateRow = ColorTranslator.FromHtml("#F9F4FC");
+
         public static readonly Font DefaultFont = new Font("Segoe UI", 10F, FontStyle.Regular);
         public static readonly Font TitleFont = new Font("Segoe UI", 14F, FontStyle.Bold);
         public static readonly Font ButtonFont = new Font("Segoe UI", 10F, FontStyle.Bold);
@@ -28,7 +37,7 @@ namespace ConferenceApp
             ApplyControlsStyle(form.Controls);
         }
 
-        private static void ApplyControlsStyle(Control.ControlCollection controls)
+        public static void ApplyControlsStyle(Control.ControlCollection controls)
         {
             foreach (Control control in controls)
             {
@@ -108,7 +117,7 @@ namespace ConferenceApp
             }
         }
 
-        private static void ApplyButtonStyle(Button button)
+        public static void ApplyButtonStyle(Button button)
         {
             button.BackColor = Primary;
             button.ForeColor = Background;
@@ -128,7 +137,28 @@ namespace ConferenceApp
             }
         }
 
-        private static void ApplyTextBoxStyle(TextBox textBox)
+        public static void ApplySecondaryButtonStyle(Button button)
+        {
+            button.BackColor = Light;
+            button.ForeColor = Dark;
+            button.Font = ButtonFont;
+
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 1;
+            button.FlatAppearance.BorderColor = Border;
+            button.FlatAppearance.MouseOverBackColor = Accent;
+            button.FlatAppearance.MouseDownBackColor = Primary;
+
+            button.Cursor = Cursors.Hand;
+            button.UseVisualStyleBackColor = false;
+
+            if (button.Height < 32)
+            {
+                button.Height = 32;
+            }
+        }
+
+        public static void ApplyTextBoxStyle(TextBox textBox)
         {
             textBox.BackColor = White;
             textBox.ForeColor = Dark;
@@ -136,7 +166,7 @@ namespace ConferenceApp
             textBox.BorderStyle = BorderStyle.FixedSingle;
         }
 
-        private static void ApplyRichTextBoxStyle(RichTextBox richTextBox)
+        public static void ApplyRichTextBoxStyle(RichTextBox richTextBox)
         {
             richTextBox.BackColor = White;
             richTextBox.ForeColor = Dark;
@@ -144,7 +174,7 @@ namespace ConferenceApp
             richTextBox.BorderStyle = BorderStyle.FixedSingle;
         }
 
-        private static void ApplyComboBoxStyle(ComboBox comboBox)
+        public static void ApplyComboBoxStyle(ComboBox comboBox)
         {
             comboBox.BackColor = White;
             comboBox.ForeColor = Dark;
@@ -152,7 +182,7 @@ namespace ConferenceApp
             comboBox.FlatStyle = FlatStyle.Flat;
         }
 
-        private static void ApplyLinkLabelStyle(LinkLabel linkLabel)
+        public static void ApplyLinkLabelStyle(LinkLabel linkLabel)
         {
             linkLabel.ForeColor = Primary;
             linkLabel.LinkColor = Primary;
@@ -161,7 +191,7 @@ namespace ConferenceApp
             linkLabel.Font = DefaultFont;
         }
 
-        private static void ApplyLabelStyle(Label label)
+        public static void ApplyLabelStyle(Label label)
         {
             label.ForeColor = Dark;
 
@@ -175,38 +205,70 @@ namespace ConferenceApp
             }
         }
 
-        private static void ApplyGroupBoxStyle(GroupBox groupBox)
+        public static void ApplyCardTitleLabelStyle(Label label)
+        {
+            label.ForeColor = CardTitleText;
+            label.Font = HeaderFont;
+        }
+
+        public static void ApplyCardMainLabelStyle(Label label)
+        {
+            label.ForeColor = CardMainText;
+            label.Font = DefaultFont;
+        }
+
+        public static void ApplyCardSecondaryLabelStyle(Label label)
+        {
+            label.ForeColor = CardSecondaryText;
+            label.Font = DefaultFont;
+        }
+
+        public static void ApplyGroupBoxStyle(GroupBox groupBox)
         {
             groupBox.BackColor = Background;
             groupBox.ForeColor = Dark;
             groupBox.Font = HeaderFont;
         }
 
-        private static void ApplyPanelStyle(Panel panel)
+        public static void ApplyPanelStyle(Panel panel)
         {
             panel.BackColor = Light;
         }
 
-        private static void ApplyFlowLayoutPanelStyle(FlowLayoutPanel panel)
+        public static void ApplyCardStyle(Panel card)
+        {
+            card.BackColor = CardBack;
+            card.ForeColor = CardMainText;
+            card.BorderStyle = BorderStyle.FixedSingle;
+        }
+
+        public static void ApplySelectedCardStyle(Panel card)
+        {
+            card.BackColor = CardSelectedBack;
+            card.ForeColor = CardMainText;
+            card.BorderStyle = BorderStyle.FixedSingle;
+        }
+
+        public static void ApplyFlowLayoutPanelStyle(FlowLayoutPanel panel)
         {
             panel.BackColor = Light;
         }
 
-        private static void ApplyTabControlStyle(TabControl tabControl)
+        public static void ApplyTabControlStyle(TabControl tabControl)
         {
             tabControl.BackColor = Background;
             tabControl.ForeColor = Dark;
             tabControl.Font = HeaderFont;
         }
 
-        private static void ApplyTabPageStyle(TabPage tabPage)
+        public static void ApplyTabPageStyle(TabPage tabPage)
         {
             tabPage.BackColor = Background;
             tabPage.ForeColor = Dark;
             tabPage.Font = DefaultFont;
         }
 
-        private static void ApplyListBoxStyle(ListBox listBox)
+        public static void ApplyListBoxStyle(ListBox listBox)
         {
             listBox.BackColor = White;
             listBox.ForeColor = Dark;
@@ -214,7 +276,7 @@ namespace ConferenceApp
             listBox.BorderStyle = BorderStyle.FixedSingle;
         }
 
-        private static void ApplyDateTimePickerStyle(DateTimePicker dateTimePicker)
+        public static void ApplyDateTimePickerStyle(DateTimePicker dateTimePicker)
         {
             dateTimePicker.BackColor = White;
             dateTimePicker.ForeColor = Dark;
@@ -225,7 +287,7 @@ namespace ConferenceApp
             dateTimePicker.CalendarTitleForeColor = White;
         }
 
-        private static void ApplyNumericUpDownStyle(NumericUpDown numericUpDown)
+        public static void ApplyNumericUpDownStyle(NumericUpDown numericUpDown)
         {
             numericUpDown.BackColor = White;
             numericUpDown.ForeColor = Dark;
@@ -233,7 +295,7 @@ namespace ConferenceApp
             numericUpDown.BorderStyle = BorderStyle.FixedSingle;
         }
 
-        private static void ApplyCheckBoxStyle(CheckBox checkBox)
+        public static void ApplyCheckBoxStyle(CheckBox checkBox)
         {
             checkBox.BackColor = Background;
             checkBox.ForeColor = Dark;
@@ -241,7 +303,7 @@ namespace ConferenceApp
             checkBox.FlatStyle = FlatStyle.Flat;
         }
 
-        private static void ApplyRadioButtonStyle(RadioButton radioButton)
+        public static void ApplyRadioButtonStyle(RadioButton radioButton)
         {
             radioButton.BackColor = Background;
             radioButton.ForeColor = Dark;
@@ -249,7 +311,7 @@ namespace ConferenceApp
             radioButton.FlatStyle = FlatStyle.Flat;
         }
 
-        private static void ApplyDataGridViewStyle(DataGridView dataGridView)
+        public static void ApplyDataGridViewStyle(DataGridView dataGridView)
         {
             dataGridView.EnableHeadersVisualStyles = false;
 
@@ -276,56 +338,7 @@ namespace ConferenceApp
             dataGridView.RowsDefaultCellStyle.SelectionBackColor = Accent;
             dataGridView.RowsDefaultCellStyle.SelectionForeColor = White;
 
-            dataGridView.AlternatingRowsDefaultCellStyle.BackColor = ColorTranslator.FromHtml("#F9F4FC");
-            dataGridView.AlternatingRowsDefaultCellStyle.ForeColor = Dark;
-            dataGridView.AlternatingRowsDefaultCellStyle.SelectionBackColor = Accent;
-            dataGridView.AlternatingRowsDefaultCellStyle.SelectionForeColor = White;
-
-            dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Primary;
-            dataGridView.ColumnHeadersDefaultCellStyle.ForeColor = White;
-            dataGridView.ColumnHeadersDefaultCellStyle.SelectionBackColor = Primary;
-            dataGridView.ColumnHeadersDefaultCellStyle.SelectionForeColor = White;
-            dataGridView.ColumnHeadersDefaultCellStyle.Font = ButtonFont;
-
-            dataGridView.RowHeadersDefaultCellStyle.BackColor = Primary;
-            dataGridView.RowHeadersDefaultCellStyle.ForeColor = White;
-            dataGridView.RowHeadersDefaultCellStyle.SelectionBackColor = Primary;
-            dataGridView.RowHeadersDefaultCellStyle.SelectionForeColor = White;
-
-            dataGridView.DataBindingComplete -= DataGridView_DataBindingComplete;
-            dataGridView.DataBindingComplete += DataGridView_DataBindingComplete;
-        }
-
-        private static void DataGridView_DataBindingComplete(object sender, DataGridViewBindingCompleteEventArgs e)
-        {
-            DataGridView dataGridView = sender as DataGridView;
-
-            if (dataGridView == null)
-                return;
-
-            dataGridView.EnableHeadersVisualStyles = false;
-
-            dataGridView.BackgroundColor = Background;
-            dataGridView.GridColor = Light;
-            dataGridView.BorderStyle = BorderStyle.FixedSingle;
-
-            dataGridView.RowHeadersVisible = false;
-            dataGridView.AllowUserToResizeRows = false;
-            dataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView.MultiSelect = false;
-
-            dataGridView.DefaultCellStyle.BackColor = White;
-            dataGridView.DefaultCellStyle.ForeColor = Dark;
-            dataGridView.DefaultCellStyle.SelectionBackColor = Accent;
-            dataGridView.DefaultCellStyle.SelectionForeColor = White;
-            dataGridView.DefaultCellStyle.Font = DefaultFont;
-
-            dataGridView.RowsDefaultCellStyle.BackColor = White;
-            dataGridView.RowsDefaultCellStyle.ForeColor = Dark;
-            dataGridView.RowsDefaultCellStyle.SelectionBackColor = Accent;
-            dataGridView.RowsDefaultCellStyle.SelectionForeColor = White;
-
-            dataGridView.AlternatingRowsDefaultCellStyle.BackColor = ColorTranslator.FromHtml("#F9F4FC");
+            dataGridView.AlternatingRowsDefaultCellStyle.BackColor = TableAlternateRow;
             dataGridView.AlternatingRowsDefaultCellStyle.ForeColor = Dark;
             dataGridView.AlternatingRowsDefaultCellStyle.SelectionBackColor = Accent;
             dataGridView.AlternatingRowsDefaultCellStyle.SelectionForeColor = White;
@@ -349,6 +362,19 @@ namespace ConferenceApp
                 column.HeaderCell.Style.SelectionForeColor = White;
                 column.HeaderCell.Style.Font = ButtonFont;
             }
+
+            dataGridView.DataBindingComplete -= DataGridView_DataBindingComplete;
+            dataGridView.DataBindingComplete += DataGridView_DataBindingComplete;
+        }
+
+        private static void DataGridView_DataBindingComplete(object sender, DataGridViewBindingCompleteEventArgs e)
+        {
+            DataGridView dataGridView = sender as DataGridView;
+
+            if (dataGridView == null)
+                return;
+
+            ApplyDataGridViewStyle(dataGridView);
         }
     }
 }
