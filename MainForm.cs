@@ -14,6 +14,7 @@ namespace ConferenceApp
         public MainForm(int userId, string fullName, string role, LoginForm login)
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
 
             currentUserId = userId;
             currentUserName = fullName;

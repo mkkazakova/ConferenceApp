@@ -18,6 +18,7 @@ namespace ConferenceApp
         public ProgramForm(int userId, string role)
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
 
             currentUserId = userId;
             currentUserRole = role;

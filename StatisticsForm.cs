@@ -15,6 +15,7 @@ namespace ConferenceApp
         public StatisticsForm(string userRole)
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
 
             currentUserRole = userRole;
 

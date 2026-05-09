@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
@@ -12,6 +13,27 @@ namespace ConferenceApp
         public LoginForm()
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
+            AddPageTitle();
+        }
+
+        private void AddPageTitle()
+        {
+            Label titleLabel = new Label();
+
+            titleLabel.Text = "Вход в систему";
+            titleLabel.Font = AppTheme.TitleFont;
+            titleLabel.ForeColor = AppTheme.Dark;
+            titleLabel.AutoSize = true;
+
+            Controls.Add(titleLabel);
+
+            titleLabel.Location = new Point(
+                (ClientSize.Width - titleLabel.Width) / 2,
+                55
+            );
+
+            titleLabel.BringToFront();
         }
 
         private void btnLogin_Click(object sender, EventArgs e)

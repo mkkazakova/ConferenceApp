@@ -24,6 +24,7 @@ namespace ConferenceApp
         public ReviewsForm(int reviewerId, string userRole)
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
 
             currentReviewerId = reviewerId;
             currentUserRole = userRole;

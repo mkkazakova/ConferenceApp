@@ -25,6 +25,7 @@ namespace ConferenceApp
         public ReportsForm(int userId, string role)
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
 
             currentUserId = userId;
             currentUserRole = role;

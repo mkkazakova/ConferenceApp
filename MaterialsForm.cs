@@ -13,6 +13,7 @@ namespace ConferenceApp
         public MaterialsForm()
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
 
             CenterTitle();
             LoadMaterials();

@@ -11,6 +11,7 @@ namespace ConferenceApp
         public RegisterForm()
         {
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
 
             cmbParticipantStatus.SelectedIndex = 0;
             cmbAcademicDegree.SelectedIndex = 0;

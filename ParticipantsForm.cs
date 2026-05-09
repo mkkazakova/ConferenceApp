@@ -24,6 +24,7 @@ namespace ConferenceApp
             currentUserRole = userRole;
 
             InitializeComponent();
+            AppTheme.ApplyFormStyle(this);
             ConfigureFormByRole();
 
             cmbRoleFilter.SelectedIndex = 0;
