@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace ConferenceApp
@@ -14,7 +15,6 @@ namespace ConferenceApp
         public MainForm(int userId, string fullName, string role, LoginForm login)
         {
             InitializeComponent();
-            AppTheme.ApplyFormStyle(this);
 
             currentUserId = userId;
             currentUserName = fullName;
@@ -24,7 +24,11 @@ namespace ConferenceApp
             lblUser.Text = "Пользователь: " + currentUserName;
             lblRole.Text = "Роль: " + currentUserRole;
 
+            AppTheme.ApplyFormStyle(this);
+            ApplyMainFormStyle();
+
             ConfigureAccessByRole();
+            ArrangeVisibleButtons();
 
             btnProfile.Click += btnProfile_Click;
             btnParticipants.Click += btnParticipants_Click;
@@ -37,14 +41,91 @@ namespace ConferenceApp
             btnExit.Click += btnExit_Click;
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+
+            ConfigureAccessByRole();
+            ArrangeVisibleButtons();
+        }
+
+        private void ApplyMainFormStyle()
+        {
+            lblTitle.Font = AppTheme.TitleFont;
+            lblTitle.ForeColor = AppTheme.Dark;
+
+            lblInfo.Font = AppTheme.HeaderFont;
+            lblInfo.ForeColor = AppTheme.Dark;
+
+            lblUser.Font = AppTheme.DefaultFont;
+            lblUser.ForeColor = AppTheme.Dark;
+
+            lblRole.Font = AppTheme.DefaultFont;
+            lblRole.ForeColor = AppTheme.Dark;
+
+            StyleExitButton();
+        }
+
+        private void StyleExitButton()
+        {
+            btnExit.BackColor = AppTheme.Primary;
+            btnExit.ForeColor = AppTheme.Background;
+            btnExit.Font = AppTheme.ButtonFont;
+
+            btnExit.FlatStyle = FlatStyle.Flat;
+            btnExit.FlatAppearance.BorderSize = 0;
+            btnExit.FlatAppearance.MouseOverBackColor = AppTheme.Dark;
+            btnExit.FlatAppearance.MouseDownBackColor = AppTheme.Accent;
+
+            btnExit.UseVisualStyleBackColor = false;
+            btnExit.Cursor = Cursors.Hand;
+        }
+
+        private void ArrangeVisibleButtons()
+        {
+            Button[] buttons =
+            {
+                btnProfile,
+                btnReports,
+                btnReviews,
+                btnParticipants,
+                btnSections,
+                btnProgram,
+                btnMaterials,
+                btnStatistics
+            };
+
+            int x = 185;
+            int y = 175;
+            int buttonWidth = 280;
+            int buttonHeight = 44;
+            int stepY = 60;
+
+            foreach (Button button in buttons)
+            {
+                if (!button.Visible)
+                    continue;
+
+                button.Size = new Size(buttonWidth, buttonHeight);
+                button.Location = new Point(x, y);
+                button.BringToFront();
+
+                y += stepY;
+            }
+
+            btnExit.Size = new Size(120, 40);
+            btnExit.Location = new Point(490, 700);
+            btnExit.BringToFront();
+        }
+
         private void ConfigureAccessByRole()
         {
             btnProfile.Visible = true;
 
-            btnParticipants.Visible = false;
             btnReports.Visible = false;
-            btnSections.Visible = false;
             btnReviews.Visible = false;
+            btnParticipants.Visible = false;
+            btnSections.Visible = false;
             btnProgram.Visible = false;
             btnMaterials.Visible = false;
             btnStatistics.Visible = false;
@@ -65,20 +146,20 @@ namespace ConferenceApp
             }
             else if (currentUserRole == "Организатор")
             {
-                btnParticipants.Visible = true;
                 btnReports.Visible = true;
-                btnSections.Visible = true;
                 btnReviews.Visible = true;
+                btnParticipants.Visible = true;
+                btnSections.Visible = true;
                 btnProgram.Visible = true;
                 btnMaterials.Visible = true;
                 btnStatistics.Visible = true;
             }
             else if (currentUserRole == "Администратор")
             {
-                btnParticipants.Visible = true;
                 btnReports.Visible = true;
-                btnSections.Visible = true;
                 btnReviews.Visible = true;
+                btnParticipants.Visible = true;
+                btnSections.Visible = true;
                 btnProgram.Visible = true;
                 btnMaterials.Visible = true;
                 btnStatistics.Visible = true;
