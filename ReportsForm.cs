@@ -25,7 +25,6 @@ namespace ConferenceApp
         public ReportsForm(int userId, string role)
         {
             InitializeComponent();
-            AppTheme.ApplyFormStyle(this);
 
             currentUserId = userId;
             currentUserRole = role;
@@ -46,6 +45,8 @@ namespace ConferenceApp
 
         private void InitializeForm()
         {
+            AppTheme.ApplyFormStyle(this);
+
             SetupGridStyle();
             ConfigureAccessByRole();
             CenterTitle();
@@ -106,7 +107,7 @@ namespace ConferenceApp
 
             if (IsOrganizerOrAdmin())
             {
-                btnAddToSection.Text = "Сохранить в программе";
+                btnAddToSection.Text = "Сохранить";
             }
 
             txtTopic.ReadOnly = isOrganizer;
@@ -442,6 +443,11 @@ namespace ConferenceApp
                           SELECT 1
                           FROM dbo.tb_conference_program
                           WHERE id_report = @ReportId
+                      )
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM dbo.tb_materials
+                          WHERE id_report = @ReportId
                       );
                 ";
 
@@ -460,7 +466,7 @@ namespace ConferenceApp
                 }
                 else
                 {
-                    MessageBox.Show("Удалить можно только свой доклад со статусом «На рассмотрении».");
+                    MessageBox.Show("Удалить можно только свой доклад со статусом «На рассмотрении», если у него нет рецензий, записи в программе и связанных материалов.");
                 }
             }
             catch (Exception ex)

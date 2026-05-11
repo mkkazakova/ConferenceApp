@@ -11,6 +11,11 @@ namespace ConferenceApp
         private int currentUserId;
         private string currentUserRole;
         private int selectedSectionId = 0;
+        private int selectedVisitId = 0;
+        private int selectedFreePlaces = 0;
+
+        private bool isLoadingSections = false;
+        private bool isClearingFields = false;
 
         public SectionsForm(int userId, string role)
         {
@@ -18,40 +23,87 @@ namespace ConferenceApp
             AppTheme.ApplyFormStyle(this);
 
             currentUserId = userId;
-            currentUserRole = role;
+            currentUserRole = role == null ? "" : role.Trim();
 
             SetupGridStyle();
             ConfigureAccessByRole();
             CenterTitle();
 
             dgvSections.MouseDown += dgvSections_MouseDown;
+            dgvSections.SelectionChanged += dgvSections_SelectionChanged;
 
             LoadSections();
+        }
+
+        private bool IsParticipant()
+        {
+            return currentUserRole == "Участник";
+        }
+
+        private bool IsOrganizerOrAdmin()
+        {
+            return currentUserRole == "Организатор" || currentUserRole == "Администратор";
         }
 
         private void LoadSections()
         {
             try
             {
+                isLoadingSections = true;
+
                 string query = @"
                     SELECT
                         s.id_section AS [ID],
                         s.section_name AS [Название секции],
                         s.description AS [Описание],
+                        s.max_participants AS [Макс. участников],
+                        COUNT(all_visits.id_visit) AS [Записано],
+                        s.max_participants - COUNT(all_visits.id_visit) AS [Свободно],
+
+                        user_visit.id_visit AS [ID посещения],
+                        user_visit.organization_score AS [Оценка организации],
+                        user_visit.content_score AS [Оценка содержания],
+                        user_visit.usefulness_score AS [Оценка пользы],
+                        user_visit.visit_comment AS [Комментарий],
+
                         CASE
-                            WHEN sv.id_visit IS NULL THEN N'Не записан'
+                            WHEN @CanVisit = 0 THEN N''
+                            WHEN user_visit.id_visit IS NULL THEN N'Не записан'
                             ELSE N'Записан'
                         END AS [Статус записи]
                     FROM dbo.tb_sections AS s
-                    LEFT JOIN dbo.tb_section_visits AS sv
-                        ON s.id_section = sv.id_section
-                       AND sv.id_participant = @UserId
+                    LEFT JOIN
+                    (
+                        SELECT
+                            sv.id_visit,
+                            sv.id_section
+                        FROM dbo.tb_section_visits AS sv
+                        INNER JOIN dbo.tb_participants AS p
+                            ON sv.id_participant = p.id_participant
+                        WHERE p.user_role = N'Участник'
+                    ) AS all_visits
+                        ON s.id_section = all_visits.id_section
+                    LEFT JOIN dbo.tb_section_visits AS user_visit
+                        ON s.id_section = user_visit.id_section
+                       AND user_visit.id_participant = @UserId
+                       AND @CanVisit = 1
+                    GROUP BY
+                        s.id_section,
+                        s.section_name,
+                        s.description,
+                        s.max_participants,
+                        user_visit.id_visit,
+                        user_visit.organization_score,
+                        user_visit.content_score,
+                        user_visit.usefulness_score,
+                        user_visit.visit_comment
                     ORDER BY s.section_name;
                 ";
 
                 SqlParameter[] parameters =
                 {
-                    new SqlParameter("@UserId", currentUserId)
+                    new SqlParameter("@UserId", currentUserId),
+                    new SqlParameter("@CanVisit", IsParticipant() ? 1 : 0)
                 };
 
                 DataTable table = Database.ExecuteSelect(query, parameters);
@@ -60,11 +112,16 @@ namespace ConferenceApp
                 dgvSections.AutoGenerateColumns = true;
                 dgvSections.DataSource = table;
 
-                if (dgvSections.Columns.Contains("ID"))
-                    dgvSections.Columns["ID"].Visible = false;
+                HideColumn("ID");
+                HideColumn("Описание");
+                HideColumn("ID посещения");
+                HideColumn("Оценка организации");
+                HideColumn("Оценка содержания");
+                HideColumn("Оценка пользы");
+                HideColumn("Комментарий");
 
-                if (dgvSections.Columns.Contains("Описание"))
-                    dgvSections.Columns["Описание"].Visible = false;
+                if (!IsParticipant())
+                    HideColumn("Статус записи");
 
                 if (dgvSections.Columns.Contains("Название секции"))
                     dgvSections.Columns["Название секции"].HeaderText = "Название";
@@ -80,6 +137,16 @@ namespace ConferenceApp
             {
                 MessageBox.Show("Ошибка загрузки секций: " + ex.Message);
             }
+            finally
+            {
+                isLoadingSections = false;
+            }
+        }
+
+        private void HideColumn(string columnName)
+        {
+            if (dgvSections.Columns.Contains(columnName))
+                dgvSections.Columns[columnName].Visible = false;
         }
 
         private void LoadSectionReports(int sectionId)
@@ -163,8 +230,8 @@ namespace ConferenceApp
 
         private void ConfigureAccessByRole()
         {
-            bool canManage = currentUserRole == "Организатор" || currentUserRole == "Администратор";
-            bool isParticipant = currentUserRole == "Участник";
+            bool canManage = IsOrganizerOrAdmin();
+            bool isParticipant = IsParticipant();
 
             btnRegister.Visible = isParticipant;
             btnCancelRegister.Visible = isParticipant;
@@ -173,13 +240,30 @@ namespace ConferenceApp
             btnUpdate.Visible = canManage;
             btnDelete.Visible = canManage;
 
+            lblFeedback.Visible = isParticipant;
+            lblOrganizationScore.Visible = isParticipant;
+            lblContentScore.Visible = isParticipant;
+            lblUsefulnessScore.Visible = isParticipant;
+            lblVisitComment.Visible = isParticipant;
+            nudOrganizationScore.Visible = isParticipant;
+            nudContentScore.Visible = isParticipant;
+            nudUsefulnessScore.Visible = isParticipant;
+            txtVisitComment.Visible = isParticipant;
+            btnSaveFeedback.Visible = isParticipant;
+
             txtSectionName.ReadOnly = !canManage;
             txtDescription.ReadOnly = !canManage;
+
+            AppTheme.ApplyButtonStyle(btnSaveFeedback);
+            btnSaveFeedback.UseVisualStyleBackColor = false;
+            btnSaveFeedback.ForeColor = Color.White;
+
+            UpdateFeedbackControlsState(false);
         }
 
         private void CenterTitle()
         {
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
+            lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
         }
 
         private void dgvSections_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -187,13 +271,122 @@ namespace ConferenceApp
             if (e.RowIndex < 0)
                 return;
 
-            DataGridViewRow row = dgvSections.Rows[e.RowIndex];
+            FillFieldsFromSelectedRow(dgvSections.Rows[e.RowIndex]);
+        }
+
+        private void dgvSections_SelectionChanged(object sender, EventArgs e)
+        {
+            if (isLoadingSections || isClearingFields)
+                return;
+
+            if (dgvSections.CurrentRow == null)
+                return;
+
+            FillFieldsFromSelectedRow(dgvSections.CurrentRow);
+        }
+
+        private void FillFieldsFromSelectedRow(DataGridViewRow row)
+        {
+            if (row == null)
+                return;
+
+            if (isLoadingSections || isClearingFields)
+                return;
+
+            if (!dgvSections.Columns.Contains("ID"))
+                return;
 
             selectedSectionId = Convert.ToInt32(row.Cells["ID"].Value);
-            txtSectionName.Text = row.Cells["Название секции"].Value.ToString();
-            txtDescription.Text = row.Cells["Описание"].Value == DBNull.Value ? "" : row.Cells["Описание"].Value.ToString();
+            selectedVisitId = GetVisitIdFromRow(row);
+            selectedFreePlaces = GetIntFromRow(row, "Свободно");
+
+            txtSectionName.Text = GetCellValue(row, "Название секции");
+            txtDescription.Text = GetCellValue(row, "Описание");
 
             LoadSectionReports(selectedSectionId);
+            LoadFeedbackFromRow(row);
+        }
+
+        private void LoadFeedbackFromRow(DataGridViewRow row)
+        {
+            if (!IsParticipant())
+                return;
+
+            selectedVisitId = GetVisitIdFromRow(row);
+
+            SetNumericValue(nudOrganizationScore, GetCellValue(row, "Оценка организации"));
+            SetNumericValue(nudContentScore, GetCellValue(row, "Оценка содержания"));
+            SetNumericValue(nudUsefulnessScore, GetCellValue(row, "Оценка пользы"));
+
+            txtVisitComment.Text = GetCellValue(row, "Комментарий");
+
+            UpdateFeedbackControlsState(selectedVisitId > 0);
+        }
+
+        private int GetVisitIdFromRow(DataGridViewRow row)
+        {
+            return GetIntFromRow(row, "ID посещения");
+        }
+
+        private int GetIntFromRow(DataGridViewRow row, string columnName)
+        {
+            if (row == null)
+                return 0;
+
+            if (!dgvSections.Columns.Contains(columnName))
+                return 0;
+
+            object value = row.Cells[columnName].Value;
+
+            if (value == null || value == DBNull.Value)
+                return 0;
+
+            return Convert.ToInt32(value);
+        }
+
+        private void SetNumericValue(NumericUpDown control, string value)
+        {
+            if (int.TryParse(value, out int score) && score >= control.Minimum && score <= control.Maximum)
+                control.Value = score;
+            else
+                control.Value = 5;
+        }
+
+        private string GetCellValue(DataGridViewRow row, string columnName)
+        {
+            if (row == null)
+                return "";
+
+            if (!dgvSections.Columns.Contains(columnName))
+                return "";
+
+            object value = row.Cells[columnName].Value;
+
+            if (value == null || value == DBNull.Value)
+                return "";
+
+            return value.ToString();
+        }
+
+        private void UpdateFeedbackControlsState(bool enabled)
+        {
+            if (!IsParticipant())
+                return;
+
+            nudOrganizationScore.Enabled = enabled;
+            nudContentScore.Enabled = enabled;
+            nudUsefulnessScore.Enabled = enabled;
+            txtVisitComment.Enabled = enabled;
+            btnSaveFeedback.Enabled = enabled;
+
+            nudOrganizationScore.ReadOnly = !enabled;
+            nudContentScore.ReadOnly = !enabled;
+            nudUsefulnessScore.ReadOnly = !enabled;
+            txtVisitComment.ReadOnly = !enabled;
+
+            AppTheme.ApplyButtonStyle(btnSaveFeedback);
+            btnSaveFeedback.UseVisualStyleBackColor = false;
+            btnSaveFeedback.ForeColor = Color.White;
         }
 
         private void dgvSections_MouseDown(object sender, MouseEventArgs e)
@@ -208,33 +401,38 @@ namespace ConferenceApp
 
         private void btnRegister_Click(object sender, EventArgs e)
         {
+            if (!IsParticipant())
+            {
+                MessageBox.Show("Запись на секции доступна только участникам.");
+                return;
+            }
+
             if (selectedSectionId == 0)
             {
                 MessageBox.Show("Выберите секцию.");
                 return;
             }
 
-            string visitStatus = GetSelectedVisitStatus();
-
-            if (visitStatus == "Записан")
+            if (selectedVisitId > 0)
             {
                 MessageBox.Show("Вы уже записаны на эту секцию.");
                 return;
             }
 
+            if (selectedFreePlaces <= 0)
+            {
+                MessageBox.Show("В выбранной секции нет свободных мест.");
+                return;
+            }
+
             try
             {
+                int sectionId = selectedSectionId;
+
                 string query = @"
-                    INSERT INTO dbo.tb_section_visits
-                    (
-                        id_participant,
-                        id_section
-                    )
-                    VALUES
-                    (
-                        @UserId,
-                        @SectionId
-                    );
+                    EXEC dbo.usp_register_section_visit
+                        @id_participant = @UserId,
+                        @id_section = @SectionId;
                 ";
 
                 SqlParameter[] parameters =
@@ -247,6 +445,7 @@ namespace ConferenceApp
 
                 MessageBox.Show("Вы записаны на секцию.");
                 LoadSections();
+                SelectSectionInGrid(sectionId);
             }
             catch (Exception ex)
             {
@@ -256,15 +455,19 @@ namespace ConferenceApp
 
         private void btnCancelRegister_Click(object sender, EventArgs e)
         {
+            if (!IsParticipant())
+            {
+                MessageBox.Show("Отмена записи доступна только участникам.");
+                return;
+            }
+
             if (selectedSectionId == 0)
             {
                 MessageBox.Show("Выберите секцию.");
                 return;
             }
 
-            string visitStatus = GetSelectedVisitStatus();
-
-            if (visitStatus != "Записан")
+            if (selectedVisitId == 0)
             {
                 MessageBox.Show("Вы не записаны на эту секцию.");
                 return;
@@ -284,12 +487,14 @@ namespace ConferenceApp
             {
                 string query = @"
                     DELETE FROM dbo.tb_section_visits
-                    WHERE id_participant = @UserId
+                    WHERE id_visit = @VisitId
+                      AND id_participant = @UserId
                       AND id_section = @SectionId;
                 ";
 
                 SqlParameter[] parameters =
                 {
+                    new SqlParameter("@VisitId", selectedVisitId),
                     new SqlParameter("@UserId", currentUserId),
                     new SqlParameter("@SectionId", selectedSectionId)
                 };
@@ -312,24 +517,86 @@ namespace ConferenceApp
             }
         }
 
-        private string GetSelectedVisitStatus()
+        private void btnSaveFeedback_Click(object sender, EventArgs e)
         {
-            if (dgvSections.CurrentRow == null)
-                return "";
+            if (!IsParticipant())
+            {
+                MessageBox.Show("Оценивание доступно только участникам.");
+                return;
+            }
 
-            if (!dgvSections.Columns.Contains("Статус записи"))
-                return "";
+            if (selectedSectionId == 0)
+            {
+                MessageBox.Show("Выберите секцию.");
+                return;
+            }
 
-            object value = dgvSections.CurrentRow.Cells["Статус записи"].Value;
+            if (selectedVisitId == 0)
+            {
+                MessageBox.Show("Оценку можно оставить только после записи на секцию.");
+                return;
+            }
 
-            if (value == null || value == DBNull.Value)
-                return "";
+            try
+            {
+                int sectionId = selectedSectionId;
 
-            return value.ToString();
+                string query = @"
+                    EXEC dbo.usp_update_section_visit_feedback
+                        @id_visit = @VisitId,
+                        @organization_score = @OrganizationScore,
+                        @content_score = @ContentScore,
+                        @usefulness_score = @UsefulnessScore,
+                        @visit_comment = @VisitComment;
+                ";
+
+                SqlParameter[] parameters =
+                {
+                    new SqlParameter("@VisitId", selectedVisitId),
+                    new SqlParameter("@OrganizationScore", Convert.ToInt32(nudOrganizationScore.Value)),
+                    new SqlParameter("@ContentScore", Convert.ToInt32(nudContentScore.Value)),
+                    new SqlParameter("@UsefulnessScore", Convert.ToInt32(nudUsefulnessScore.Value)),
+                    new SqlParameter("@VisitComment", GetNullableText(txtVisitComment.Text))
+                };
+
+                Database.ExecuteNonQuery(query, parameters);
+
+                MessageBox.Show("Оценка и комментарий сохранены.");
+                LoadSections();
+                SelectSectionInGrid(sectionId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка сохранения оценки: " + ex.Message);
+            }
+        }
+
+        private void SelectSectionInGrid(int sectionId)
+        {
+            if (sectionId == 0)
+                return;
+
+            foreach (DataGridViewRow row in dgvSections.Rows)
+            {
+                if (row.Cells["ID"].Value == null || row.Cells["ID"].Value == DBNull.Value)
+                    continue;
+
+                if (Convert.ToInt32(row.Cells["ID"].Value) == sectionId)
+                {
+                    row.Selected = true;
+                    dgvSections.CurrentCell = row.Cells["Название секции"];
+
+                    FillFieldsFromSelectedRow(row);
+                    return;
+                }
+            }
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            if (!IsOrganizerOrAdmin())
+                return;
+
             if (!ValidateFields())
                 return;
 
@@ -339,12 +606,14 @@ namespace ConferenceApp
                     INSERT INTO dbo.tb_sections
                     (
                         section_name,
-                        description
+                        description,
+                        max_participants
                     )
                     VALUES
                     (
                         @SectionName,
-                        @Description
+                        @Description,
+                        30
                     );
                 ";
 
@@ -367,6 +636,9 @@ namespace ConferenceApp
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
+            if (!IsOrganizerOrAdmin())
+                return;
+
             if (selectedSectionId == 0)
             {
                 MessageBox.Show("Выберите секцию.");
@@ -406,6 +678,9 @@ namespace ConferenceApp
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
+            if (!IsOrganizerOrAdmin())
+                return;
+
             if (selectedSectionId == 0)
             {
                 MessageBox.Show("Выберите секцию.");
@@ -436,6 +711,11 @@ namespace ConferenceApp
                           SELECT 1
                           FROM dbo.tb_conference_program
                           WHERE id_section = @SectionId
+                      )
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM dbo.tb_materials
+                          WHERE id_section = @SectionId
                       );
                 ";
 
@@ -453,7 +733,7 @@ namespace ConferenceApp
                 }
                 else
                 {
-                    MessageBox.Show("Секцию нельзя удалить: на неё есть записи участников или доклады в программе.");
+                    MessageBox.Show("Секцию нельзя удалить: на неё есть записи участников, доклады в программе или материалы.");
                 }
             }
             catch (Exception ex)
@@ -488,14 +768,32 @@ namespace ConferenceApp
 
         private void ClearFields()
         {
-            selectedSectionId = 0;
+            try
+            {
+                isClearingFields = true;
 
-            txtSectionName.Clear();
-            txtDescription.Clear();
-            lstReports.Items.Clear();
+                selectedSectionId = 0;
+                selectedVisitId = 0;
+                selectedFreePlaces = 0;
 
-            if (dgvSections.Rows.Count > 0)
-                dgvSections.ClearSelection();
+                txtSectionName.Clear();
+                txtDescription.Clear();
+                lstReports.Items.Clear();
+
+                nudOrganizationScore.Value = 5;
+                nudContentScore.Value = 5;
+                nudUsefulnessScore.Value = 5;
+                txtVisitComment.Clear();
+
+                UpdateFeedbackControlsState(false);
+
+                if (dgvSections.Rows.Count > 0)
+                    dgvSections.ClearSelection();
+            }
+            finally
+            {
+                isClearingFields = false;
+            }
         }
     }
 }

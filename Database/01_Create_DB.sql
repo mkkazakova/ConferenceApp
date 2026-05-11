@@ -4,6 +4,7 @@ GO
 IF OBJECT_ID('dbo.tb_section_visits', 'U') IS NOT NULL DROP TABLE dbo.tb_section_visits;
 IF OBJECT_ID('dbo.tb_reviews', 'U') IS NOT NULL DROP TABLE dbo.tb_reviews;
 IF OBJECT_ID('dbo.tb_conference_program', 'U') IS NOT NULL DROP TABLE dbo.tb_conference_program;
+IF OBJECT_ID('dbo.tb_materials', 'U') IS NOT NULL DROP TABLE dbo.tb_materials;
 IF OBJECT_ID('dbo.tb_reports', 'U') IS NOT NULL DROP TABLE dbo.tb_reports;
 IF OBJECT_ID('dbo.tb_sections', 'U') IS NOT NULL DROP TABLE dbo.tb_sections;
 IF OBJECT_ID('dbo.tb_participants', 'U') IS NOT NULL DROP TABLE dbo.tb_participants;
@@ -27,13 +28,10 @@ CREATE TABLE dbo.tb_participants
 
     CONSTRAINT pk_tb_participants PRIMARY KEY (id_participant),
     CONSTRAINT uq_tb_participants_email UNIQUE (email),
-
     CONSTRAINT chk_tb_participants_status
         CHECK (participant_status IN (N'Докладчик', N'Слушатель')),
-
     CONSTRAINT chk_tb_participants_role
         CHECK (user_role IN (N'Участник', N'Рецензент', N'Организатор', N'Администратор')),
-
     CONSTRAINT chk_tb_participants_email
         CHECK (email LIKE N'%@%.%')
 );
@@ -44,9 +42,13 @@ CREATE TABLE dbo.tb_sections
     id_section INT IDENTITY(1,1) NOT NULL,
     section_name NVARCHAR(200) NOT NULL,
     description NVARCHAR(MAX) NULL,
+    max_participants INT NOT NULL
+        CONSTRAINT df_tb_sections_max_participants DEFAULT 30,
 
     CONSTRAINT pk_tb_sections PRIMARY KEY (id_section),
-    CONSTRAINT uq_tb_sections_section_name UNIQUE (section_name)
+    CONSTRAINT uq_tb_sections_section_name UNIQUE (section_name),
+    CONSTRAINT chk_tb_sections_max_participants
+        CHECK (max_participants > 0)
 );
 GO
 
@@ -57,28 +59,51 @@ CREATE TABLE dbo.tb_reports
     annotation NVARCHAR(MAX) NULL,
     keywords NVARCHAR(300) NULL,
     review_status NVARCHAR(30) NOT NULL DEFAULT N'На рассмотрении',
-
     file_name NVARCHAR(255) NULL,
     file_extension NVARCHAR(20) NULL,
     file_content VARBINARY(MAX) NULL,
-
     id_author INT NOT NULL,
 
     CONSTRAINT pk_tb_reports PRIMARY KEY (id_report),
-
     CONSTRAINT fk_tb_reports_id_author
-        FOREIGN KEY (id_author)
-        REFERENCES dbo.tb_participants(id_participant),
-
+        FOREIGN KEY (id_author) REFERENCES dbo.tb_participants(id_participant),
     CONSTRAINT chk_tb_reports_review_status
         CHECK (review_status IN (N'На рассмотрении', N'Принят', N'Отклонен')),
-
     CONSTRAINT chk_tb_reports_file_data
-        CHECK (
+        CHECK
+        (
             (file_name IS NULL AND file_extension IS NULL AND file_content IS NULL)
             OR
             (file_name IS NOT NULL AND file_extension IS NOT NULL AND file_content IS NOT NULL)
         )
+);
+GO
+
+CREATE TABLE dbo.tb_materials
+(
+    id_material INT IDENTITY(1,1) NOT NULL,
+    material_title NVARCHAR(300) NOT NULL,
+    material_description NVARCHAR(MAX) NULL,
+    file_name NVARCHAR(255) NOT NULL,
+    file_extension NVARCHAR(20) NOT NULL,
+    file_content VARBINARY(MAX) NOT NULL,
+    upload_date DATETIME2(0) NOT NULL
+        CONSTRAINT df_tb_materials_upload_date DEFAULT SYSDATETIME(),
+    id_report INT NULL,
+    id_section INT NULL,
+    created_by INT NULL,
+
+    CONSTRAINT pk_tb_materials PRIMARY KEY (id_material),
+    CONSTRAINT fk_tb_materials_id_report
+        FOREIGN KEY (id_report) REFERENCES dbo.tb_reports(id_report),
+    CONSTRAINT fk_tb_materials_id_section
+        FOREIGN KEY (id_section) REFERENCES dbo.tb_sections(id_section),
+    CONSTRAINT fk_tb_materials_created_by
+        FOREIGN KEY (created_by) REFERENCES dbo.tb_participants(id_participant),
+    CONSTRAINT chk_tb_materials_relation
+        CHECK (id_report IS NOT NULL OR id_section IS NOT NULL),
+    CONSTRAINT chk_tb_materials_file_extension
+        CHECK (file_extension LIKE N'.%')
 );
 GO
 
@@ -92,18 +117,12 @@ CREATE TABLE dbo.tb_conference_program
     id_section INT NOT NULL,
 
     CONSTRAINT pk_tb_conference_program PRIMARY KEY (id_presentation),
-
     CONSTRAINT fk_tb_conference_program_id_report
-        FOREIGN KEY (id_report)
-        REFERENCES dbo.tb_reports(id_report),
-
+        FOREIGN KEY (id_report) REFERENCES dbo.tb_reports(id_report),
     CONSTRAINT fk_tb_conference_program_id_section
-        FOREIGN KEY (id_section)
-        REFERENCES dbo.tb_sections(id_section),
-
+        FOREIGN KEY (id_section) REFERENCES dbo.tb_sections(id_section),
     CONSTRAINT uq_tb_conference_program_section_time
         UNIQUE (id_section, presentation_date, presentation_time),
-
     CONSTRAINT uq_tb_conference_program_report
         UNIQUE (id_report)
 );
@@ -121,29 +140,16 @@ CREATE TABLE dbo.tb_reviews
     id_reviewer INT NOT NULL,
 
     CONSTRAINT pk_tb_reviews PRIMARY KEY (id_review),
-
     CONSTRAINT fk_tb_reviews_id_report
-        FOREIGN KEY (id_report)
-        REFERENCES dbo.tb_reports(id_report),
-
+        FOREIGN KEY (id_report) REFERENCES dbo.tb_reports(id_report),
     CONSTRAINT fk_tb_reviews_id_reviewer
-        FOREIGN KEY (id_reviewer)
-        REFERENCES dbo.tb_participants(id_participant),
-
-    CONSTRAINT chk_tb_reviews_novelty_score
-        CHECK (novelty_score BETWEEN 1 AND 10),
-
-    CONSTRAINT chk_tb_reviews_relevance_score
-        CHECK (relevance_score BETWEEN 1 AND 10),
-
-    CONSTRAINT chk_tb_reviews_quality_score
-        CHECK (quality_score BETWEEN 1 AND 10),
-
+        FOREIGN KEY (id_reviewer) REFERENCES dbo.tb_participants(id_participant),
+    CONSTRAINT chk_tb_reviews_novelty_score CHECK (novelty_score BETWEEN 1 AND 10),
+    CONSTRAINT chk_tb_reviews_relevance_score CHECK (relevance_score BETWEEN 1 AND 10),
+    CONSTRAINT chk_tb_reviews_quality_score CHECK (quality_score BETWEEN 1 AND 10),
     CONSTRAINT chk_tb_reviews_result
         CHECK (review_result IN (N'Принят', N'Отклонен', N'На доработку')),
-
-    CONSTRAINT uq_tb_reviews_report_reviewer
-        UNIQUE (id_report, id_reviewer)
+    CONSTRAINT uq_tb_reviews_report_reviewer UNIQUE (id_report, id_reviewer)
 );
 GO
 
@@ -152,18 +158,23 @@ CREATE TABLE dbo.tb_section_visits
     id_visit INT IDENTITY(1,1) NOT NULL,
     id_participant INT NOT NULL,
     id_section INT NOT NULL,
+    organization_score INT NULL,
+    content_score INT NULL,
+    usefulness_score INT NULL,
+    visit_comment NVARCHAR(MAX) NULL,
 
     CONSTRAINT pk_tb_section_visits PRIMARY KEY (id_visit),
-
     CONSTRAINT fk_tb_section_visits_id_participant
-        FOREIGN KEY (id_participant)
-        REFERENCES dbo.tb_participants(id_participant),
-
+        FOREIGN KEY (id_participant) REFERENCES dbo.tb_participants(id_participant),
     CONSTRAINT fk_tb_section_visits_id_section
-        FOREIGN KEY (id_section)
-        REFERENCES dbo.tb_sections(id_section),
-
+        FOREIGN KEY (id_section) REFERENCES dbo.tb_sections(id_section),
     CONSTRAINT uq_tb_section_visits_participant_section
-        UNIQUE (id_participant, id_section)
+        UNIQUE (id_participant, id_section),
+    CONSTRAINT chk_tb_section_visits_organization_score
+        CHECK (organization_score IS NULL OR organization_score BETWEEN 1 AND 10),
+    CONSTRAINT chk_tb_section_visits_content_score
+        CHECK (content_score IS NULL OR content_score BETWEEN 1 AND 10),
+    CONSTRAINT chk_tb_section_visits_usefulness_score
+        CHECK (usefulness_score IS NULL OR usefulness_score BETWEEN 1 AND 10)
 );
 GO

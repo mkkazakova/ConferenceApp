@@ -29,29 +29,41 @@ namespace ConferenceApp
 
                 string query = @"
                     SELECT
-                        r.id_report,
-                        r.topic,
-                        r.annotation,
-                        r.keywords,
-                        r.file_name,
-                        r.file_extension,
-                        p.last_name,
-                        p.first_name,
-                        p.middle_name,
-                        p.workplace
-                    FROM dbo.tb_reports AS r
-                    INNER JOIN dbo.tb_participants AS p
-                        ON r.id_author = p.id_participant
-                    WHERE r.review_status = N'Принят'
-                      AND (
-                            @Search = N''
-                            OR r.topic LIKE N'%' + @Search + N'%'
-                            OR p.last_name LIKE N'%' + @Search + N'%'
-                            OR p.first_name LIKE N'%' + @Search + N'%'
-                            OR p.middle_name LIKE N'%' + @Search + N'%'
-                            OR p.last_name + N' ' + p.first_name + N' ' + ISNULL(p.middle_name, N'') LIKE N'%' + @Search + N'%'
-                          )
-                    ORDER BY r.topic;
+                        m.id_material,
+                        m.material_title,
+                        m.material_description,
+                        COALESCE(r.keywords, s.section_name, N'') AS keywords,
+                        m.file_name,
+                        m.file_extension,
+
+                        COALESCE(creator.last_name, author.last_name, N'') AS last_name,
+                        COALESCE(creator.first_name, author.first_name, N'') AS first_name,
+                        COALESCE(creator.middle_name, author.middle_name, N'') AS middle_name,
+                        COALESCE(creator.workplace, author.workplace, N'') AS workplace
+                    FROM dbo.tb_materials AS m
+                    LEFT JOIN dbo.tb_reports AS r
+                        ON m.id_report = r.id_report
+                    LEFT JOIN dbo.tb_sections AS s
+                        ON m.id_section = s.id_section
+                    LEFT JOIN dbo.tb_participants AS creator
+                        ON m.created_by = creator.id_participant
+                    LEFT JOIN dbo.tb_participants AS author
+                        ON r.id_author = author.id_participant
+                    WHERE
+                        @Search = N''
+                        OR m.material_title LIKE N'%' + @Search + N'%'
+                        OR m.material_description LIKE N'%' + @Search + N'%'
+                        OR m.file_name LIKE N'%' + @Search + N'%'
+                        OR r.topic LIKE N'%' + @Search + N'%'
+                        OR r.keywords LIKE N'%' + @Search + N'%'
+                        OR s.section_name LIKE N'%' + @Search + N'%'
+                        OR creator.last_name LIKE N'%' + @Search + N'%'
+                        OR creator.first_name LIKE N'%' + @Search + N'%'
+                        OR creator.middle_name LIKE N'%' + @Search + N'%'
+                        OR author.last_name LIKE N'%' + @Search + N'%'
+                        OR author.first_name LIKE N'%' + @Search + N'%'
+                        OR author.middle_name LIKE N'%' + @Search + N'%'
+                    ORDER BY m.material_title;
                 ";
 
                 SqlParameter[] parameters =
@@ -87,19 +99,22 @@ namespace ConferenceApp
 
         private void AddMaterialCard(DataRow row)
         {
-            int reportId = Convert.ToInt32(row["id_report"]);
+            int materialId = Convert.ToInt32(row["id_material"]);
 
-            string topic = row["topic"].ToString();
-            string annotation = row["annotation"] == DBNull.Value ? "" : row["annotation"].ToString();
+            string title = row["material_title"] == DBNull.Value ? "" : row["material_title"].ToString();
+            string description = row["material_description"] == DBNull.Value ? "" : row["material_description"].ToString();
             string keywords = row["keywords"] == DBNull.Value ? "" : row["keywords"].ToString();
             string fileName = row["file_name"] == DBNull.Value ? "" : row["file_name"].ToString();
             string workplace = row["workplace"] == DBNull.Value ? "" : row["workplace"].ToString();
 
-            string firstName = row["first_name"].ToString();
+            string firstName = row["first_name"] == DBNull.Value ? "" : row["first_name"].ToString();
             string middleName = row["middle_name"] == DBNull.Value ? "" : row["middle_name"].ToString();
-            string lastName = row["last_name"].ToString();
+            string lastName = row["last_name"] == DBNull.Value ? "" : row["last_name"].ToString();
 
             string author = GetShortName(firstName, middleName, lastName);
+
+            if (string.IsNullOrWhiteSpace(author))
+                author = "не указан";
 
             Panel card = new Panel();
             card.Width = flowMaterials.ClientSize.Width - 35;
@@ -109,7 +124,7 @@ namespace ConferenceApp
             AppTheme.ApplyCardStyle(card);
 
             Label lblTopic = new Label();
-            lblTopic.Text = topic;
+            lblTopic.Text = title;
             lblTopic.Location = new Point(15, 12);
             lblTopic.Size = new Size(760, 25);
             lblTopic.AutoEllipsis = true;
@@ -123,14 +138,14 @@ namespace ConferenceApp
             AppTheme.ApplyCardSecondaryLabelStyle(lblAuthor);
 
             Label lblAnnotation = new Label();
-            lblAnnotation.Text = "Аннотация: " + annotation;
+            lblAnnotation.Text = "Описание: " + description;
             lblAnnotation.Location = new Point(15, 65);
             lblAnnotation.Size = new Size(760, 22);
             lblAnnotation.AutoEllipsis = true;
             AppTheme.ApplyCardMainLabelStyle(lblAnnotation);
 
             Label lblKeywords = new Label();
-            lblKeywords.Text = "Ключевые слова: " + keywords;
+            lblKeywords.Text = "Ключевые слова / секция: " + keywords;
             lblKeywords.Location = new Point(15, 90);
             lblKeywords.Size = new Size(620, 22);
             lblKeywords.AutoEllipsis = true;
@@ -147,7 +162,7 @@ namespace ConferenceApp
             btnOpen.Text = "Открыть файл";
             btnOpen.Size = new Size(140, 30);
             btnOpen.Location = new Point(card.Width - 160, 105);
-            btnOpen.Tag = reportId;
+            btnOpen.Tag = materialId;
             btnOpen.Enabled = fileName != "";
             btnOpen.Click += btnOpenFile_Click;
 
@@ -175,7 +190,7 @@ namespace ConferenceApp
             if (button == null || button.Tag == null)
                 return;
 
-            int reportId = Convert.ToInt32(button.Tag);
+            int materialId = Convert.ToInt32(button.Tag);
 
             try
             {
@@ -184,13 +199,13 @@ namespace ConferenceApp
                         file_name,
                         file_extension,
                         file_content
-                    FROM dbo.tb_reports
-                    WHERE id_report = @ReportId;
+                    FROM dbo.tb_materials
+                    WHERE id_material = @MaterialId;
                 ";
 
                 SqlParameter[] parameters =
                 {
-                    new SqlParameter("@ReportId", reportId)
+                    new SqlParameter("@MaterialId", materialId)
                 };
 
                 DataTable table = Database.ExecuteSelect(query, parameters);
@@ -219,7 +234,7 @@ namespace ConferenceApp
                     return;
                 }
 
-                string tempFilePath = SaveFileToTemp(reportId, fileName, fileExtension, fileContent);
+                string tempFilePath = SaveFileToTemp(materialId, fileName, fileExtension, fileContent);
 
                 ProcessStartInfo startInfo = new ProcessStartInfo();
                 startInfo.FileName = tempFilePath;
@@ -233,7 +248,7 @@ namespace ConferenceApp
             }
         }
 
-        private string SaveFileToTemp(int reportId, string fileName, string fileExtension, byte[] fileContent)
+        private string SaveFileToTemp(int materialId, string fileName, string fileExtension, byte[] fileContent)
         {
             string tempDirectory = Path.Combine(Path.GetTempPath(), "ConferenceApp", "Materials");
             Directory.CreateDirectory(tempDirectory);
@@ -245,7 +260,7 @@ namespace ConferenceApp
                 fileExtension = "." + fileExtension;
 
             if (string.IsNullOrWhiteSpace(fileName))
-                fileName = "report_" + reportId + fileExtension;
+                fileName = "material_" + materialId + fileExtension;
 
             fileName = GetSafeFileName(fileName);
 
@@ -283,7 +298,8 @@ namespace ConferenceApp
             if (!string.IsNullOrWhiteSpace(middleName))
                 result += middleName.Substring(0, 1) + ".";
 
-            result += " " + lastName;
+            if (!string.IsNullOrWhiteSpace(lastName))
+                result += " " + lastName;
 
             return result.Trim();
         }

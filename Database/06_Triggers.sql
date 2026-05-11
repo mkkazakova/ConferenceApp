@@ -1,34 +1,14 @@
 ﻿USE ConferenceDB;
 GO
 
-/* =========================================================
-   Удаление триггеров при повторном создании
-   ========================================================= */
-
-IF OBJECT_ID('dbo.trg_reports_author_must_be_speaker', 'TR') IS NOT NULL
-    DROP TRIGGER dbo.trg_reports_author_must_be_speaker;
+IF OBJECT_ID('dbo.trg_reports_author_must_be_speaker', 'TR') IS NOT NULL DROP TRIGGER dbo.trg_reports_author_must_be_speaker;
+IF OBJECT_ID('dbo.trg_reports_remove_from_program_if_not_accepted', 'TR') IS NOT NULL DROP TRIGGER dbo.trg_reports_remove_from_program_if_not_accepted;
+IF OBJECT_ID('dbo.trg_reviews_reviewer_check', 'TR') IS NOT NULL DROP TRIGGER dbo.trg_reviews_reviewer_check;
+IF OBJECT_ID('dbo.trg_reviews_update_report_status', 'TR') IS NOT NULL DROP TRIGGER dbo.trg_reviews_update_report_status;
+IF OBJECT_ID('dbo.trg_program_only_accepted_reports', 'TR') IS NOT NULL DROP TRIGGER dbo.trg_program_only_accepted_reports;
+IF OBJECT_ID('dbo.trg_section_visits_limit', 'TR') IS NOT NULL DROP TRIGGER dbo.trg_section_visits_limit;
+IF OBJECT_ID('dbo.trg_sections_max_participants_check', 'TR') IS NOT NULL DROP TRIGGER dbo.trg_sections_max_participants_check;
 GO
-
-IF OBJECT_ID('dbo.trg_reports_remove_from_program_if_not_accepted', 'TR') IS NOT NULL
-    DROP TRIGGER dbo.trg_reports_remove_from_program_if_not_accepted;
-GO
-
-IF OBJECT_ID('dbo.trg_reviews_reviewer_check', 'TR') IS NOT NULL
-    DROP TRIGGER dbo.trg_reviews_reviewer_check;
-GO
-
-IF OBJECT_ID('dbo.trg_reviews_update_report_status', 'TR') IS NOT NULL
-    DROP TRIGGER dbo.trg_reviews_update_report_status;
-GO
-
-IF OBJECT_ID('dbo.trg_program_only_accepted_reports', 'TR') IS NOT NULL
-    DROP TRIGGER dbo.trg_program_only_accepted_reports;
-GO
-
-
-/* =========================================================
-   1. Автором доклада может быть только докладчик
-   ========================================================= */
 
 CREATE TRIGGER dbo.trg_reports_author_must_be_speaker
 ON dbo.tb_reports
@@ -37,7 +17,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (
+    IF EXISTS
+    (
         SELECT 1
         FROM inserted AS i
         INNER JOIN dbo.tb_participants AS p
@@ -50,12 +31,6 @@ BEGIN
     END;
 END;
 GO
-
-
-/* =========================================================
-   2. Если доклад стал не принятым,
-      он удаляется из программы конференции
-   ========================================================= */
 
 CREATE TRIGGER dbo.trg_reports_remove_from_program_if_not_accepted
 ON dbo.tb_reports
@@ -72,12 +47,6 @@ BEGIN
 END;
 GO
 
-
-/* =========================================================
-   3. Рецензент должен иметь роль "Рецензент"
-      и не может рецензировать собственный доклад
-   ========================================================= */
-
 CREATE TRIGGER dbo.trg_reviews_reviewer_check
 ON dbo.tb_reviews
 AFTER INSERT, UPDATE
@@ -85,7 +54,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (
+    IF EXISTS
+    (
         SELECT 1
         FROM inserted AS i
         INNER JOIN dbo.tb_participants AS p
@@ -97,7 +67,8 @@ BEGIN
         THROW 51002, N'Рецензию может добавлять только пользователь с ролью "Рецензент".', 1;
     END;
 
-    IF EXISTS (
+    IF EXISTS
+    (
         SELECT 1
         FROM inserted AS i
         INNER JOIN dbo.tb_reports AS r
@@ -111,12 +82,6 @@ BEGIN
 END;
 GO
 
-
-/* =========================================================
-   4. Автоматическое обновление статуса доклада
-      по результатам рецензирования
-   ========================================================= */
-
 CREATE TRIGGER dbo.trg_reviews_update_report_status
 ON dbo.tb_reviews
 AFTER INSERT, UPDATE, DELETE
@@ -127,34 +92,35 @@ BEGIN
     UPDATE r
     SET review_status =
         CASE
-            WHEN EXISTS (
+            WHEN EXISTS
+            (
                 SELECT 1
                 FROM dbo.tb_reviews AS rv
                 WHERE rv.id_report = r.id_report
                   AND rv.review_result = N'Отклонен'
             )
-                THEN N'Отклонен'
-
-            WHEN EXISTS (
+            THEN N'Отклонен'
+            WHEN EXISTS
+            (
                 SELECT 1
                 FROM dbo.tb_reviews AS rv
                 WHERE rv.id_report = r.id_report
                   AND rv.review_result = N'На доработку'
             )
-                THEN N'На рассмотрении'
-
-            WHEN EXISTS (
+            THEN N'На рассмотрении'
+            WHEN EXISTS
+            (
                 SELECT 1
                 FROM dbo.tb_reviews AS rv
                 WHERE rv.id_report = r.id_report
                   AND rv.review_result = N'Принят'
             )
-                THEN N'Принят'
-
+            THEN N'Принят'
             ELSE N'На рассмотрении'
         END
     FROM dbo.tb_reports AS r
-    WHERE r.id_report IN (
+    WHERE r.id_report IN
+    (
         SELECT id_report FROM inserted
         UNION
         SELECT id_report FROM deleted
@@ -165,19 +131,14 @@ BEGIN
     INNER JOIN dbo.tb_reports AS r
         ON cp.id_report = r.id_report
     WHERE r.review_status <> N'Принят'
-      AND r.id_report IN (
-            SELECT id_report FROM inserted
-            UNION
-            SELECT id_report FROM deleted
+      AND r.id_report IN
+      (
+          SELECT id_report FROM inserted
+          UNION
+          SELECT id_report FROM deleted
       );
 END;
 GO
-
-
-/* =========================================================
-   5. В программу конференции можно добавить
-      только принятый доклад
-   ========================================================= */
 
 CREATE TRIGGER dbo.trg_program_only_accepted_reports
 ON dbo.tb_conference_program
@@ -186,7 +147,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (
+    IF EXISTS
+    (
         SELECT 1
         FROM inserted AS i
         INNER JOIN dbo.tb_reports AS r
@@ -196,6 +158,59 @@ BEGIN
     BEGIN
         ROLLBACK TRANSACTION;
         THROW 51004, N'В программу конференции можно добавить только принятый доклад.', 1;
+    END;
+END;
+GO
+
+CREATE TRIGGER dbo.trg_section_visits_limit
+ON dbo.tb_section_visits
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.tb_sections AS s
+        INNER JOIN
+        (
+            SELECT id_section, COUNT(*) AS visitors_count
+            FROM dbo.tb_section_visits
+            GROUP BY id_section
+        ) AS vc
+            ON s.id_section = vc.id_section
+        WHERE vc.visitors_count > s.max_participants
+    )
+    BEGIN
+        ROLLBACK TRANSACTION;
+        THROW 51005, N'Количество участников секции превышает установленный лимит.', 1;
+    END;
+END;
+GO
+
+CREATE TRIGGER dbo.trg_sections_max_participants_check
+ON dbo.tb_sections
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF UPDATE(max_participants)
+       AND EXISTS
+       (
+           SELECT 1
+           FROM inserted AS i
+           WHERE
+           (
+               SELECT COUNT(*)
+               FROM dbo.tb_section_visits AS sv
+               WHERE sv.id_section = i.id_section
+           ) > i.max_participants
+       )
+    BEGIN
+        ROLLBACK TRANSACTION;
+        THROW 51006, N'Нельзя установить лимит меньше текущего количества записанных участников.', 1;
     END;
 END;
 GO
