@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
-using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
@@ -11,12 +10,11 @@ namespace ConferenceApp
     public partial class StatisticsForm : Form
     {
         private string currentUserRole;
+        private string currentTableMode = "ParticipantsByRole";
 
         public StatisticsForm(string userRole)
         {
             InitializeComponent();
-            AppTheme.ApplyFormStyle(this);
-            AppTheme.ApplySectionTitleStyle(lblTableTitle);
 
             currentUserRole = userRole;
 
@@ -27,6 +25,7 @@ namespace ConferenceApp
                 return;
             }
 
+            ApplyTheme();
             SetupGridStyle();
             LoadSummary();
             LoadParticipantsByRole();
@@ -38,34 +37,50 @@ namespace ConferenceApp
                 || currentUserRole == "Администратор";
         }
 
+        private void ApplyTheme()
+        {
+            AppTheme.ApplyFormStyle(this);
+            AppTheme.ApplySectionTitleStyle(lblTitle);
+            AppTheme.ApplySectionTitleStyle(lblTableTitle);
+            AppTheme.ApplyCardStyle(summaryPanel);
+
+            AppTheme.ApplyCardTitleLabelStyle(lblParticipantsTitle);
+            AppTheme.ApplyCardTitleLabelStyle(lblReportsTitle);
+            AppTheme.ApplyCardTitleLabelStyle(lblSectionsTitle);
+            AppTheme.ApplyCardTitleLabelStyle(lblReviewsTitle);
+            AppTheme.ApplyCardTitleLabelStyle(lblProgramTitle);
+            AppTheme.ApplyCardTitleLabelStyle(lblVisitsTitle);
+
+            AppTheme.ApplyCardMainLabelStyle(lblParticipantsValue);
+            AppTheme.ApplyCardMainLabelStyle(lblReportsValue);
+            AppTheme.ApplyCardMainLabelStyle(lblSectionsValue);
+            AppTheme.ApplyCardMainLabelStyle(lblReviewsValue);
+            AppTheme.ApplyCardMainLabelStyle(lblProgramValue);
+            AppTheme.ApplyCardMainLabelStyle(lblVisitsValue);
+
+            ApplyButtonsStyle();
+        }
+
+        private void ApplyButtonsStyle()
+        {
+            AppTheme.ApplyButtonStyle(btnParticipantsByRole);
+            AppTheme.ApplyButtonStyle(btnReportsByStatus);
+            AppTheme.ApplyButtonStyle(btnSectionPopularity);
+            AppTheme.ApplyButtonStyle(btnReviewsByReviewer);
+            AppTheme.ApplyButtonStyle(btnAverageScores);
+            AppTheme.ApplyButtonStyle(btnSectionScores);
+            AppTheme.ApplyButtonStyle(btnRefresh);
+            AppTheme.ApplyButtonStyle(btnExportReport);
+            AppTheme.ApplyButtonStyle(btnClose);
+        }
+
         private void SetupGridStyle()
         {
-            dgvStatistics.BackgroundColor = Color.White;
-            dgvStatistics.BorderStyle = BorderStyle.FixedSingle;
-            dgvStatistics.RowHeadersVisible = false;
-            dgvStatistics.AllowUserToAddRows = false;
-            dgvStatistics.AllowUserToDeleteRows = false;
-            dgvStatistics.AllowUserToResizeRows = false;
+            AppTheme.ApplyDataGridViewStyle(dgvStatistics);
+
             dgvStatistics.ReadOnly = true;
-            dgvStatistics.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvStatistics.MultiSelect = false;
+            dgvStatistics.AutoGenerateColumns = true;
             dgvStatistics.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dgvStatistics.GridColor = Color.LightGray;
-            dgvStatistics.EnableHeadersVisualStyles = false;
-
-            dgvStatistics.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(230, 240, 250);
-            dgvStatistics.ColumnHeadersDefaultCellStyle.ForeColor = Color.Black;
-            dgvStatistics.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(230, 240, 250);
-            dgvStatistics.ColumnHeadersDefaultCellStyle.SelectionForeColor = Color.Black;
-            dgvStatistics.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
-
-            dgvStatistics.DefaultCellStyle.BackColor = Color.White;
-            dgvStatistics.DefaultCellStyle.ForeColor = Color.Black;
-            dgvStatistics.DefaultCellStyle.SelectionBackColor = Color.FromArgb(210, 230, 250);
-            dgvStatistics.DefaultCellStyle.SelectionForeColor = Color.Black;
-            dgvStatistics.DefaultCellStyle.Font = new Font("Microsoft Sans Serif", 9F);
-
-            dgvStatistics.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 252, 255);
         }
 
         private void LoadSummary()
@@ -111,6 +126,9 @@ namespace ConferenceApp
         {
             try
             {
+                currentTableMode = "ParticipantsByRole";
+                ApplyButtonsStyle();
+
                 lblTableTitle.Text = "Количество участников по ролям";
                 LoadTable(GetParticipantsByRoleQuery());
             }
@@ -124,6 +142,9 @@ namespace ConferenceApp
         {
             try
             {
+                currentTableMode = "ReportsByStatus";
+                ApplyButtonsStyle();
+
                 lblTableTitle.Text = "Количество докладов по статусам";
                 LoadTable(GetReportsByStatusQuery());
             }
@@ -137,6 +158,9 @@ namespace ConferenceApp
         {
             try
             {
+                currentTableMode = "SectionPopularity";
+                ApplyButtonsStyle();
+
                 lblTableTitle.Text = "Популярность секций";
                 LoadTable(GetSectionPopularityQuery());
             }
@@ -150,6 +174,9 @@ namespace ConferenceApp
         {
             try
             {
+                currentTableMode = "ReviewsByReviewer";
+                ApplyButtonsStyle();
+
                 lblTableTitle.Text = "Количество рецензий по рецензентам";
                 LoadTable(GetReviewsByReviewerQuery());
             }
@@ -163,12 +190,31 @@ namespace ConferenceApp
         {
             try
             {
+                currentTableMode = "AverageScoresByReport";
+                ApplyButtonsStyle();
+
                 lblTableTitle.Text = "Средние оценки докладов";
                 LoadTable(GetAverageScoresByReportQuery());
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Ошибка загрузки средних оценок: " + ex.Message);
+            }
+        }
+
+        private void LoadSectionScores()
+        {
+            try
+            {
+                currentTableMode = "SectionScores";
+                ApplyButtonsStyle();
+
+                lblTableTitle.Text = "Оценка секций участниками";
+                LoadTable(GetSectionScoresQuery());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка загрузки оценок секций: " + ex.Message);
             }
         }
 
@@ -185,7 +231,25 @@ namespace ConferenceApp
                 column.SortMode = DataGridViewColumnSortMode.NotSortable;
             }
 
+            AppTheme.ApplyDataGridViewStyle(dgvStatistics);
+            dgvStatistics.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvStatistics.ClearSelection();
+        }
+
+        private void RefreshCurrentTable()
+        {
+            if (currentTableMode == "ReportsByStatus")
+                LoadReportsByStatus();
+            else if (currentTableMode == "SectionPopularity")
+                LoadSectionPopularity();
+            else if (currentTableMode == "ReviewsByReviewer")
+                LoadReviewsByReviewer();
+            else if (currentTableMode == "AverageScoresByReport")
+                LoadAverageScoresByReport();
+            else if (currentTableMode == "SectionScores")
+                LoadSectionScores();
+            else
+                LoadParticipantsByRole();
         }
 
         private string GetParticipantsByRoleQuery()
@@ -262,6 +326,50 @@ namespace ConferenceApp
             ";
         }
 
+        private string GetSectionScoresQuery()
+        {
+            return @"
+                SELECT
+                    s.section_name AS [Секция],
+                    COUNT(sv.id_visit) AS [Записей на секцию],
+                    COUNT(
+                        CASE
+                            WHEN sv.organization_score IS NOT NULL
+                              OR sv.content_score IS NOT NULL
+                              OR sv.usefulness_score IS NOT NULL
+                            THEN 1
+                        END
+                    ) AS [Оценок участников],
+                    CAST(AVG(CAST(sv.organization_score AS FLOAT)) AS DECIMAL(5,2)) AS [Организация],
+                    CAST(AVG(CAST(sv.content_score AS FLOAT)) AS DECIMAL(5,2)) AS [Содержание],
+                    CAST(AVG(CAST(sv.usefulness_score AS FLOAT)) AS DECIMAL(5,2)) AS [Полезность],
+                    CAST(
+                        AVG(
+                            CASE
+                                WHEN sv.organization_score IS NOT NULL
+                                  AND sv.content_score IS NOT NULL
+                                  AND sv.usefulness_score IS NOT NULL
+                                THEN (sv.organization_score + sv.content_score + sv.usefulness_score) / 3.0
+                                ELSE NULL
+                            END
+                        ) AS DECIMAL(5,2)
+                    ) AS [Средняя оценка],
+                    SUM(
+                        CASE
+                            WHEN sv.visit_comment IS NOT NULL
+                             AND LTRIM(RTRIM(sv.visit_comment)) <> N''
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS [Комментариев]
+                FROM dbo.tb_sections AS s
+                LEFT JOIN dbo.tb_section_visits AS sv
+                    ON s.id_section = sv.id_section
+                GROUP BY s.section_name
+                ORDER BY [Средняя оценка] DESC, [Оценок участников] DESC, s.section_name;
+            ";
+        }
+
         private void btnExportReport_Click(object sender, EventArgs e)
         {
             if (!HasAccess())
@@ -273,7 +381,7 @@ namespace ConferenceApp
             using (SaveFileDialog dialog = new SaveFileDialog())
             {
                 dialog.Title = "Сохранение отчета";
-                dialog.Filter = "Текстовый отчет (*.txt)|*.txt|CSV файл текущей таблицы (*.csv)|*.csv";
+                dialog.Filter = "Текстовый отчет (*.txt)|*.txt|CSV отчет (*.csv)|*.csv";
                 dialog.FileName = "Отчет_конференции_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".txt";
 
                 if (dialog.ShowDialog() != DialogResult.OK)
@@ -310,6 +418,7 @@ namespace ConferenceApp
                 WriteTable(writer, "Популярность секций", GetSectionPopularityQuery());
                 WriteTable(writer, "Количество рецензий по рецензентам", GetReviewsByReviewerQuery());
                 WriteTable(writer, "Средние оценки докладов", GetAverageScoresByReportQuery());
+                WriteTable(writer, "Оценка секций участниками", GetSectionScoresQuery());
             }
         }
 
@@ -361,34 +470,76 @@ namespace ConferenceApp
 
         private void ExportToCsv(string filePath)
         {
-            if (dgvStatistics.DataSource == null || dgvStatistics.Rows.Count == 0)
+            Encoding csvEncoding = Encoding.GetEncoding(1251);
+
+            using (StreamWriter writer = new StreamWriter(filePath, false, csvEncoding))
             {
-                MessageBox.Show("Нет данных для экспорта текущей таблицы.");
+                writer.WriteLine("sep=;");
+                writer.WriteLine(EscapeCsv("ОТЧЕТ ПО ИНФОРМАЦИОННОЙ СИСТЕМЕ «НАУЧНАЯ КОНФЕРЕНЦИЯ»"));
+                writer.WriteLine(EscapeCsv("Дата формирования: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm")));
+                writer.WriteLine();
+
+                WriteSummaryCsv(writer);
+
+                WriteTableCsv(writer, "Количество участников по ролям", GetParticipantsByRoleQuery());
+                WriteTableCsv(writer, "Количество докладов по статусам", GetReportsByStatusQuery());
+                WriteTableCsv(writer, "Популярность секций", GetSectionPopularityQuery());
+                WriteTableCsv(writer, "Количество рецензий по рецензентам", GetReviewsByReviewerQuery());
+                WriteTableCsv(writer, "Средние оценки докладов", GetAverageScoresByReportQuery());
+                WriteTableCsv(writer, "Оценка секций участниками", GetSectionScoresQuery());
+            }
+        }
+
+        private void WriteSummaryCsv(StreamWriter writer)
+        {
+            DataTable table = GetSummaryTable();
+
+            if (table.Rows.Count == 0)
                 return;
+
+            DataRow row = table.Rows[0];
+
+            writer.WriteLine(EscapeCsv("Общая статистика"));
+            writer.WriteLine(EscapeCsv("Показатель") + ";" + EscapeCsv("Значение"));
+            writer.WriteLine(EscapeCsv("Участники") + ";" + EscapeCsv(Convert.ToString(row["participants_count"])));
+            writer.WriteLine(EscapeCsv("Доклады") + ";" + EscapeCsv(Convert.ToString(row["reports_count"])));
+            writer.WriteLine(EscapeCsv("Секции") + ";" + EscapeCsv(Convert.ToString(row["sections_count"])));
+            writer.WriteLine(EscapeCsv("Рецензии") + ";" + EscapeCsv(Convert.ToString(row["reviews_count"])));
+            writer.WriteLine(EscapeCsv("Программа") + ";" + EscapeCsv(Convert.ToString(row["program_count"])));
+            writer.WriteLine(EscapeCsv("Записи на секции") + ";" + EscapeCsv(Convert.ToString(row["visits_count"])));
+            writer.WriteLine();
+        }
+
+        private void WriteTableCsv(StreamWriter writer, string title, string query)
+        {
+            DataTable table = Database.ExecuteSelect(query, new SqlParameter[0]);
+
+            writer.WriteLine(EscapeCsv(title));
+
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+                if (i > 0)
+                    writer.Write(";");
+
+                writer.Write(EscapeCsv(table.Columns[i].ColumnName));
             }
 
-            using (StreamWriter writer = new StreamWriter(filePath, false, new UTF8Encoding(true)))
+            writer.WriteLine();
+
+            foreach (DataRow row in table.Rows)
             {
-                foreach (DataGridViewColumn column in dgvStatistics.Columns)
+                for (int i = 0; i < table.Columns.Count; i++)
                 {
-                    writer.Write(EscapeCsv(column.HeaderText) + ";");
+                    if (i > 0)
+                        writer.Write(";");
+
+                    writer.Write(EscapeCsv(Convert.ToString(row[table.Columns[i]])));
                 }
 
                 writer.WriteLine();
-
-                foreach (DataGridViewRow row in dgvStatistics.Rows)
-                {
-                    if (row.IsNewRow)
-                        continue;
-
-                    foreach (DataGridViewCell cell in row.Cells)
-                    {
-                        writer.Write(EscapeCsv(Convert.ToString(cell.Value)) + ";");
-                    }
-
-                    writer.WriteLine();
-                }
             }
+
+            writer.WriteLine();
         }
 
         private string EscapeCsv(string value)
@@ -398,7 +549,10 @@ namespace ConferenceApp
 
             value = value.Replace("\"", "\"\"");
 
-            if (value.Contains(";") || value.Contains("\"") || value.Contains("\n"))
+            if (value.Contains(";")
+                || value.Contains("\"")
+                || value.Contains("\n")
+                || value.Contains("\r"))
                 return "\"" + value + "\"";
 
             return value;
@@ -429,10 +583,15 @@ namespace ConferenceApp
             LoadAverageScoresByReport();
         }
 
+        private void btnSectionScores_Click(object sender, EventArgs e)
+        {
+            LoadSectionScores();
+        }
+
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             LoadSummary();
-            LoadParticipantsByRole();
+            RefreshCurrentTable();
         }
 
         private void btnClose_Click(object sender, EventArgs e)
